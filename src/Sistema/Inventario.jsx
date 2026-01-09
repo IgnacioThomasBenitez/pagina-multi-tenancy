@@ -1,153 +1,356 @@
-import React, { useState } from 'react';
-import { ShoppingCart, Package, Plus, Search, Edit, Trash2, History, Settings } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import {
+  ShoppingCart,
+  Package,
+  Plus,
+  Search,
+  Edit,
+  Trash2,
+  History,
+  Settings,
+  AlertTriangle,
+  X
+} from 'lucide-react';
 
 const Inventory = () => {
+  /* =========================
+     ESTADOS
+  ========================== */
+  const [products, setProducts] = useState(() => {
+    const saved = localStorage.getItem('inventory-products');
+    return saved ? JSON.parse(saved) : [];
+  });
+
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('Todos');
+  const [showModal, setShowModal] = useState(false);
+  const [editingProduct, setEditingProduct] = useState(null);
 
-  const products = [
-    { 
-      id: 1, 
-      name: 'Shampo', 
-      category: 'Varios', 
-      price: 2600, 
-      stock: 50, 
-      min: 1 
+  const [form, setForm] = useState({
+    name: '',
+    category: 'Varios',
+    price: '',
+    stock: '',
+    min: ''
+  });
+
+  /* =========================
+     PERSISTENCIA
+  ========================== */
+  useEffect(() => {
+    localStorage.setItem('inventory-products', JSON.stringify(products));
+  }, [products]);
+
+  /* =========================
+     FILTROS
+  ========================== */
+  const filteredProducts = products.filter(p => {
+    const matchSearch = p.name.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchCategory =
+      selectedCategory === 'Todos' || p.category === selectedCategory;
+    return matchSearch && matchCategory;
+  });
+
+  /* =========================
+     STATS
+  ========================== */
+  const totalValue = products.reduce(
+    (acc, p) => acc + p.price * p.stock,
+    0
+  );
+
+  const lowStock = products.filter(p => p.stock <= p.min).length;
+
+  /* =========================
+     CRUD
+  ========================== */
+  const openNewProduct = () => {
+    setEditingProduct(null);
+    setForm({ name: '', category: 'Varios', price: '', stock: '', min: '' });
+    setShowModal(true);
+  };
+
+  const openEditProduct = product => {
+    setEditingProduct(product);
+    setForm(product);
+    setShowModal(true);
+  };
+
+  const saveProduct = () => {
+    if (!form.name || !form.price || !form.stock) return;
+
+    if (editingProduct) {
+      setProducts(products.map(p => (p.id === form.id ? form : p)));
+    } else {
+      setProducts([
+        ...products,
+        { ...form, id: Date.now(), price: Number(form.price), stock: Number(form.stock), min: Number(form.min) }
+      ]);
     }
-  ];
+    setShowModal(false);
+  };
 
+  const deleteProduct = id => {
+    if (confirm('¿Eliminar producto?')) {
+      setProducts(products.filter(p => p.id !== id));
+    }
+  };
+
+  const addStock = id => {
+    setProducts(products.map(p =>
+      p.id === id ? { ...p, stock: p.stock + 1 } : p
+    ));
+  };
+
+  const clearData = () => {
+    if (confirm('¿Borrar todo el inventario?')) {
+      setProducts([]);
+      localStorage.removeItem('inventory-products');
+    }
+  };
+
+  /* =========================
+     UI
+  ========================== */
   return (
-    <div className="flex h-screen bg-slate-950">
-      {/* Sidebar */}
+    <div className="flex h-screen bg-slate-950 text-white">
+      {/* SIDEBAR */}
       <div className="w-64 bg-slate-900 border-r border-slate-800 p-6">
-        <div className="mb-8">
-          <h2 className="text-blue-400 font-bold text-xl mb-2">Inventario</h2>
-          <p className="text-slate-400 text-sm">Sistema de gestión de stock</p>
-        </div>
+        <h2 className="text-blue-400 font-bold text-xl mb-1">Inventario</h2>
+        <p className="text-slate-400 text-sm mb-6">Gestión de stock</p>
 
-        <div className="space-y-4">
-          {/* Action Buttons */}
-          <button className="w-full px-4 py-3 bg-purple-600 text-white rounded-lg font-semibold hover:bg-purple-700 transition">
-            <ShoppingCart className="inline mr-2" size={18} /> Ir a Ventas
-          </button>
-          <button className="w-full px-4 py-3 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition">
-            <Plus className="inline mr-2" size={18} /> Nuevo Producto
-          </button>
+        <button
+          onClick={openNewProduct}
+          className="w-full mb-4 py-3 bg-green-600 rounded-lg font-semibold hover:bg-green-700"
+        >
+          <Plus className="inline mr-2" size={18} />
+          Nuevo producto
+        </button>
 
-          {/* Stats Cards */}
-          <div className="bg-slate-800 rounded-lg p-4">
-            <p className="text-slate-400 text-sm mb-2">Total Productos</p>
-            <p className="text-3xl font-bold text-white">1</p>
+        <div className="space-y-3">
+          <div className="bg-slate-800 p-4 rounded-lg">
+            <p className="text-slate-400 text-sm">Productos</p>
+            <p className="text-2xl font-bold">{products.length}</p>
           </div>
 
-          <div className="bg-red-900/30 border border-red-700 rounded-lg p-4">
-            <p className="text-red-400 text-sm mb-2">Stock Bajo</p>
-            <p className="text-3xl font-bold text-white">0</p>
+          <div className="bg-red-900/30 border border-red-700 p-4 rounded-lg">
+            <p className="text-red-400 text-sm">Stock bajo</p>
+            <p className="text-2xl font-bold">{lowStock}</p>
           </div>
 
-          <div className="bg-green-900/30 border border-green-700 rounded-lg p-4">
-            <p className="text-green-400 text-sm mb-2">Valor Total</p>
-            <p className="text-2xl font-bold text-white">$130.000</p>
+          <div className="bg-green-900/30 border border-green-700 p-4 rounded-lg">
+            <p className="text-green-400 text-sm">Valor total</p>
+            <p className="text-xl font-bold">
+              ${totalValue.toLocaleString()}
+            </p>
           </div>
 
-          {/* Category Filter */}
-          <div>
-            <label className="block text-slate-400 text-sm mb-2">Filtrar por categoría</label>
-            <select
-              value={selectedCategory}
-              onChange={(e) => setSelectedCategory(e.target.value)}
-              className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-blue-500"
-            >
-              <option>Todos</option>
-              <option>Varios</option>
-              <option>Alimentos</option>
-              <option>Bebidas</option>
-            </select>
-          </div>
+          <select
+            value={selectedCategory}
+            onChange={e => setSelectedCategory(e.target.value)}
+            className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2"
+          >
+            <option>Todos</option>
+            <option>Varios</option>
+            <option>Alimentos</option>
+            <option>Bebidas</option>
+          </select>
 
-          {/* Clear Data Button */}
-          <button className="w-full px-4 py-3 bg-red-900/50 text-red-400 rounded-lg hover:bg-red-900 transition">
+          <button
+            onClick={clearData}
+            className="w-full py-2 bg-red-900/40 text-red-400 rounded-lg"
+          >
             Limpiar datos
           </button>
         </div>
       </div>
 
-      {/* Main Content */}
+      {/* CONTENIDO */}
       <div className="flex-1 p-8 overflow-auto">
-        <h1 className="text-3xl font-bold text-white mb-6">Inventario</h1>
-
-        {/* Search Bar */}
         <div className="relative mb-6">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
+          <Search className="absolute left-4 top-3 text-slate-400" />
           <input
-            type="text"
-            placeholder="Buscar productos..."
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full bg-slate-800 border border-slate-700 rounded-xl py-3 pl-12 pr-4 text-white placeholder-slate-400 focus:outline-none focus:border-blue-500 transition"
+            onChange={e => setSearchTerm(e.target.value)}
+            placeholder="Buscar producto..."
+            className="w-full pl-12 py-3 bg-slate-800 rounded-xl border border-slate-700"
           />
         </div>
 
-        <p className="text-slate-400 mb-6">Mostrando 1 de 1 productos</p>
-
-        {/* Products Grid */}
         <div className="grid grid-cols-3 gap-6">
-          {products.map(product => (
-            <div key={product.id} className="bg-slate-800 border-2 border-green-500 rounded-xl p-6">
-              <div className="flex items-start justify-between mb-4">
-                <div>
-                  <h3 className="text-xl font-bold text-white">{product.name}</h3>
-                  <p className="text-slate-400 text-sm mt-1">{product.category}</p>
-                </div>
-                <button className="text-slate-400 hover:text-white transition">
-                  <Settings size={20} />
-                </button>
+          {filteredProducts.map(p => (
+            <div
+              key={p.id}
+              className={`rounded-xl p-6 border-2 ${
+                p.stock <= p.min ? 'border-red-500' : 'border-green-500'
+              } bg-slate-800`}
+            >
+              <h3 className="text-xl font-bold">{p.name}</h3>
+              <p className="text-slate-400 text-sm mb-3">{p.category}</p>
+
+              <div className="bg-slate-900/50 p-3 rounded-lg mb-4 space-y-1">
+                <p>Stock: <b>{p.stock}</b></p>
+                <p>Mínimo: <b>{p.min}</b></p>
+                <p>Precio: <b>${p.price}</b></p>
               </div>
 
-              {/* Product Details */}
-              <div className="space-y-2 mb-4 bg-slate-900/50 rounded-lg p-4">
-                <div className="flex justify-between">
-                  <span className="text-slate-400">Stock actual:</span>
-                  <span className="text-white font-bold">{product.stock}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-400">Mínimo:</span>
-                  <span className="text-white font-bold">{product.min}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-400">Precio:</span>
-                  <span className="text-white font-bold">${product.price.toLocaleString()}</span>
-                </div>
-              </div>
+              {p.stock <= p.min && (
+                <p className="flex items-center text-red-400 text-sm mb-3">
+                  <AlertTriangle size={16} className="mr-1" />
+                  Stock bajo
+                </p>
+              )}
 
-              {/* Action Buttons */}
               <div className="grid grid-cols-2 gap-2">
-                <button className="py-2 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition flex items-center justify-center">
-                  <Plus className="mr-1" size={16} /> Agregar
+                <button
+                  onClick={() => addStock(p.id)}
+                  className="bg-green-600 py-2 rounded-lg"
+                >
+                  + Stock
                 </button>
-                <button className="py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition flex items-center justify-center">
-                  <History className="mr-1" size={16} /> Historial
+                <button
+                  onClick={() => openEditProduct(p)}
+                  className="bg-purple-600 py-2 rounded-lg"
+                >
+                  <Edit size={16} className="inline mr-1" />
+                  Editar
                 </button>
-                <button className="py-2 bg-purple-600 text-white rounded-lg font-semibold hover:bg-purple-700 transition flex items-center justify-center">
-                  <Edit className="mr-1" size={16} /> Editar
-                </button>
-                <button className="py-2 bg-red-600 text-white rounded-lg font-semibold hover:bg-red-700 transition flex items-center justify-center">
-                  <Trash2 className="mr-1" size={16} /> Eliminar
+                <button
+                  onClick={() => deleteProduct(p.id)}
+                  className="bg-red-600 py-2 rounded-lg col-span-2"
+                >
+                  <Trash2 size={16} className="inline mr-1" />
+                  Eliminar
                 </button>
               </div>
             </div>
           ))}
         </div>
 
-        {/* Empty State (cuando no hay productos) */}
-        {products.length === 0 && (
-          <div className="flex flex-col items-center justify-center h-96 text-slate-500">
-            <Package size={64} className="mb-4" />
-            <p className="text-xl mb-2">No hay productos</p>
-            <p className="text-sm">Agrega tu primer producto para comenzar</p>
+        {filteredProducts.length === 0 && (
+          <div className="h-96 flex flex-col items-center justify-center text-slate-500">
+            <Package size={64} />
+            <p className="mt-2">No hay productos</p>
           </div>
         )}
       </div>
+
+      {/* MODAL */}
+      {showModal && (
+  <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50">
+    <div className="bg-slate-900 border border-slate-800 rounded-2xl w-[420px] p-6 shadow-xl">
+      
+      {/* Header */}
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h2 className="text-xl font-bold text-white">
+            {editingProduct ? 'Editar producto' : 'Nuevo producto'}
+          </h2>
+          <p className="text-slate-400 text-sm">
+            Completá los datos del producto
+          </p>
+        </div>
+        <button
+          onClick={() => setShowModal(false)}
+          className="text-slate-400 hover:text-white transition"
+        >
+          ✕
+        </button>
+      </div>
+
+      {/* Form */}
+      <div className="space-y-4">
+        {/* Nombre */}
+        <div>
+          <label className="block text-sm text-slate-400 mb-1">
+            Nombre del producto
+          </label>
+          <input
+            value={form.name}
+            onChange={e => setForm({ ...form, name: e.target.value })}
+            placeholder="Ej: Shampoo Sedal"
+            className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-blue-500"
+          />
+        </div>
+
+        {/* Categoría */}
+        <div>
+          <label className="block text-sm text-slate-400 mb-1">
+            Categoría
+          </label>
+          <select
+            value={form.category}
+            onChange={e => setForm({ ...form, category: e.target.value })}
+            className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-blue-500"
+          >
+            <option>Varios</option>
+            <option>Alimentos</option>
+            <option>Bebidas</option>
+            <option>Limpieza</option>
+          </select>
+        </div>
+
+        {/* Precio / Stock */}
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="block text-sm text-slate-400 mb-1">
+              Precio
+            </label>
+            <input
+              type="number"
+              value={form.price}
+              onChange={e => setForm({ ...form, price: e.target.value })}
+              placeholder="$"
+              className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-blue-500"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm text-slate-400 mb-1">
+              Stock inicial
+            </label>
+            <input
+              type="number"
+              value={form.stock}
+              onChange={e => setForm({ ...form, stock: e.target.value })}
+              className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-blue-500"
+            />
+          </div>
+        </div>
+
+        {/* Stock mínimo */}
+        <div>
+          <label className="block text-sm text-slate-400 mb-1">
+            Stock mínimo
+          </label>
+          <input
+            type="number"
+            value={form.min}
+            onChange={e => setForm({ ...form, min: e.target.value })}
+            className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-blue-500"
+          />
+        </div>
+      </div>
+
+      {/* Footer */}
+      <div className="flex justify-end gap-3 mt-6">
+        <button
+          onClick={() => setShowModal(false)}
+          className="px-4 py-2 rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700 transition"
+        >
+          Cancelar
+        </button>
+        <button
+          onClick={saveProduct}
+          className="px-4 py-2 rounded-lg bg-blue-600 text-white font-semibold hover:bg-blue-700 transition"
+        >
+          Guardar
+        </button>
+      </div>
+    </div>
+  </div>
+)}
+
     </div>
   );
 };

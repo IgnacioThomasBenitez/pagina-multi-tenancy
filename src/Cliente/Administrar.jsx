@@ -54,7 +54,7 @@ const Dashboard = () => {
             onClick={() => navigate("/kiosco")}
             className="w-full text-left px-4 py-3 rounded-lg text-slate-400 hover:bg-slate-800/50 transition"
           >
-            🏪 Almacen / Kiosco / ETC
+            🏪 Almacen / Kiosco 
           </button>
 
           <button
@@ -62,6 +62,13 @@ const Dashboard = () => {
             className="w-full text-left px-4 py-3 rounded-lg text-slate-400 hover:bg-slate-800/50 transition"
           >
             🍔 Restaurantes
+          </button>
+
+          <button
+            onClick={() => navigate("/atencion")}
+            className="w-full text-left px-4 py-3 rounded-lg text-slate-400 hover:bg-slate-800/50 transition"
+          >
+            📞 Atencion
           </button>
         </nav>
       </div>
