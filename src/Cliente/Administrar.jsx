@@ -1,6 +1,8 @@
 import React from 'react';
 import { ShoppingCart, Package, BarChart3, Settings } from 'lucide-react';
 import { useNavigate } from "react-router-dom";
+import { LogOut } from "lucide-react";
+
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -20,7 +22,7 @@ const Dashboard = () => {
   return (
     <div className="flex h-screen bg-slate-950">
       {/* Sidebar */}
-      <div className="w-64 bg-slate-900 border-r border-slate-800 p-6">
+      <div className="w-64 bg-slate-900 border-r border-slate-800 p-6 flex flex-col">
         <div className="mb-8">
           <div className="w-20 h-20 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl mb-4 flex items-center justify-center text-4xl">
             💈
@@ -71,6 +73,10 @@ const Dashboard = () => {
             📞 Atencion
           </button>
         </nav>
+        <button className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-gray-400 hover:bg-red-900/30 hover:text-red-400 transition-all mt-auto">
+          <LogOut size={20} />
+          <span className="font-medium">Cerrar Sesión</span>
+        </button>
       </div>
 
       {/* Main Content */}
