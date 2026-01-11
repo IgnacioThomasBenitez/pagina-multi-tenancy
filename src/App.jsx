@@ -5,6 +5,7 @@ import Inventario from "./Sistema/Inventario";
 import Venta from "./Sistema/Venta";
 import Administrar from "./Cliente/Administrar"
 import Atencion from "./Sistema/Atencion"
+import Mesas from "./Sistema/Mesas"
 
 export default function AppRoutes() {
   return (
@@ -14,6 +15,7 @@ export default function AppRoutes() {
       <Route path="/inventario" element={<Inventario />} />
       <Route path="/administrar" element={<Administrar />} />
       <Route path="/atencion" element={<Atencion />} />
+      <Route path="/mesas" element={<Mesas />} />
     </Routes>
   );
 }

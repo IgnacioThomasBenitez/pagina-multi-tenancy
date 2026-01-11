@@ -32,7 +32,7 @@ const Dashboard = () => {
 
         <nav className="space-y-2">
           <button
-            onClick={() => navigate("/administrar")}
+            onClick={() => navigate("/mesas")}
             className="w-full text-left px-4 py-3 rounded-lg bg-slate-800 text-white transition"
           >
             <BarChart3 className="inline mr-3" size={18} /> Mesas
