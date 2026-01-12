@@ -1,240 +1,309 @@
-import React, { useState, useEffect } from 'react';
-import { X, Calendar, Clock, User, Phone, DollarSign, Menu, Home, Settings, BarChart, Users, LogOut } from 'lucide-react';
+// ==============================
+// IMPORTS
+// ==============================
 
+// React y hooks
+import React, { useState, useEffect } from "react";
+
+// Íconos de lucide-react
+import {
+  X,
+  Calendar,
+  Clock,
+  User,
+  Phone,
+  Home,
+  Settings,
+  BarChart,
+  Users,
+  LogOut,
+} from "lucide-react";
+
+// Imágenes de los servicios
+import corteImg from "../assets/services/corte.png";
+import manicureImg from "../assets/services/manicure.png";
+import facialImg from "../assets/services/facial.png";
+import masajeImg from "../assets/services/masaje.png";
+import depilacionImg from "../assets/services/depilacion.png";
+import pedicureImg from "../assets/services/pedicure.png";
+
+// ==============================
+// COMPONENTE PRINCIPAL
+// ==============================
 const Dashboard = () => {
+  // Servicio seleccionado para el turno
   const [selectedService, setSelectedService] = useState(null);
+
+  // Controla si el modal está visible
   const [showModal, setShowModal] = useState(false);
+
+  // Hora actual (se actualiza cada segundo)
   const [currentTime, setCurrentTime] = useState(new Date());
+
+  // Datos del formulario de turno
   const [formData, setFormData] = useState({
-    cliente: '',
-    telefono: '',
-    fecha: '',
-    hora: ''
+    cliente: "",
+    telefono: "",
+    fecha: "",
+    hora: "",
   });
 
+  // ==============================
+  // EFECTO: ACTUALIZA EL RELOJ
+  // ==============================
   useEffect(() => {
-    const timer = setInterval(() => setCurrentTime(new Date()), 1000);
+    // Intervalo que actualiza la hora cada segundo
+    const timer = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 1000);
+
+    // Limpieza del intervalo
     return () => clearInterval(timer);
   }, []);
 
+  // ==============================
+  // SERVICIOS DISPONIBLES
+  // ==============================
   const services = [
-    { id: 1, nombre: 'Corte de Cabello', precio: 500, icon: '✂️', color: 'from-blue-500 to-blue-600' },
-    { id: 2, nombre: 'Manicure', precio: 350, icon: '💅', color: 'from-pink-500 to-pink-600' },
-    { id: 3, nombre: 'Tratamiento Facial', precio: 800, icon: '✨', color: 'from-purple-500 to-purple-600' },
-    { id: 4, nombre: 'Masaje Relajante', precio: 400, icon: '💆', color: 'from-green-500 to-green-600' },
-    { id: 5, nombre: 'Depilación', precio: 600, icon: '🌟', color: 'from-yellow-500 to-yellow-600' },
-    { id: 6, nombre: 'Pedicure', precio: 300, icon: '🦶', color: 'from-red-500 to-red-600' }
+    {
+      id: 1,
+      nombre: "Corte de Cabello",
+      precio: 500,
+      img: corteImg,
+      color: "from-blue-500 to-blue-600",
+    },
+    {
+      id: 2,
+      nombre: "Manicure",
+      precio: 350,
+      img: manicureImg,
+      color: "from-pink-500 to-pink-600",
+    },
+    {
+      id: 3,
+      nombre: "Tratamiento Facial",
+      precio: 800,
+      img: facialImg,
+      color: "from-purple-500 to-purple-600",
+    },
+    {
+      id: 4,
+      nombre: "Masaje Relajante",
+      precio: 400,
+      img: masajeImg,
+      color: "from-green-500 to-green-600",
+    },
+    {
+      id: 5,
+      nombre: "Depilación",
+      precio: 600,
+      img: depilacionImg,
+      color: "from-yellow-500 to-yellow-600",
+    },
+    {
+      id: 6,
+      nombre: "Pedicure",
+      precio: 300,
+      img: pedicureImg,
+      color: "from-red-500 to-red-600",
+    },
   ];
 
+  // ==============================
+  // ITEMS DEL MENÚ LATERAL
+  // ==============================
   const menuItems = [
-    { icon: Home, label: 'Inicio', active: true },
-    { icon: Calendar, label: 'Agenda' },
-    { icon: Users, label: 'Clientes' },
-    { icon: BarChart, label: 'Reportes' },
-    { icon: Settings, label: 'Configuración' }
+    { icon: Home, label: "Inicio", active: true },
+    { icon: Calendar, label: "Agenda" },
+    { icon: Users, label: "Clientes" },
+    { icon: BarChart, label: "Reportes" },
+    { icon: Settings, label: "Configuración" },
   ];
 
+  // ==============================
+  // HANDLERS
+  // ==============================
+
+  // Cuando el usuario elige un servicio
   const handleServiceClick = (service) => {
-    setSelectedService(service);
-    setShowModal(true);
-    setFormData({ cliente: '', telefono: '', fecha: '', hora: '' });
+    setSelectedService(service); // Guarda el servicio
+    setShowModal(true); // Abre el modal
+    // Resetea el formulario
+    setFormData({ cliente: "", telefono: "", fecha: "", hora: "" });
   };
 
+  // Maneja cambios en inputs
   const handleInputChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value,
+    });
   };
 
-  const handleSubmit = () => {
-    console.log('Turno confirmado:', { ...formData, servicio: selectedService });
-    setShowModal(false);
-  };
-
-  const formatDateTime = (date) => {
-    return {
-      date: date.toLocaleDateString('es-AR', { day: '2-digit', month: 'long', year: 'numeric' }),
-      time: date.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })
-    };
-  };
+  // ==============================
+  // FORMATEO DE FECHA Y HORA
+  // ==============================
+  const formatDateTime = (date) => ({
+    date: date.toLocaleDateString("es-AR", {
+      day: "2-digit",
+      month: "long",
+      year: "numeric",
+    }),
+    time: date.toLocaleTimeString("es-AR", {
+      hour: "2-digit",
+      minute: "2-digit",
+    }),
+  });
 
   const { date, time } = formatDateTime(currentTime);
 
+  // ==============================
+  // RENDER
+  // ==============================
   return (
     <div className="flex h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">
-      {/* Sidebar Mejorado */}
-      <div className="w-72 bg-gray-900/50 backdrop-blur-xl border-r border-gray-700/50 p-6 flex flex-col">
-        {/* Logo/Avatar */}
-        <div className="mb-8">
-          <div className="w-28 h-28 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl mb-4 flex items-center justify-center mx-auto shadow-xl">
+
+      {/* ================= SIDEBAR ================= */}
+      <aside className="w-72 bg-gray-900/50 border-r border-gray-700 p-6 flex flex-col">
+        {/* Logo */}
+        <div className="mb-8 text-center">
+          <div className="w-24 h-24 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl mx-auto mb-4 flex items-center justify-center">
             <span className="text-4xl">💼</span>
           </div>
-          <h2 className="text-white text-xl font-bold text-center">Mi Negocio</h2>
-          <p className="text-gray-400 text-sm text-center mt-1">Sistema de Turnos</p>
+          <h2 className="text-white text-xl font-bold">Mi Negocio</h2>
+          <p className="text-gray-400 text-sm">Sistema de Turnos</p>
         </div>
 
-        {/* Menu Items */}
+        {/* Menú */}
         <nav className="space-y-2 flex-1">
-          {menuItems.map((item, index) => (
+          {menuItems.map((item, i) => (
             <button
-              key={index}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${
+              key={i}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl ${
                 item.active
-                  ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/50'
-                  : 'text-gray-400 hover:bg-gray-800 hover:text-white'
+                  ? "bg-blue-600 text-white"
+                  : "text-gray-400 hover:bg-gray-800 hover:text-white"
               }`}
             >
               <item.icon size={20} />
-              <span className="font-medium">{item.label}</span>
+              {item.label}
             </button>
           ))}
         </nav>
 
-        {/* Logout Button */}
-        <button className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-gray-400 hover:bg-red-900/30 hover:text-red-400 transition-all mt-4">
+        {/* Logout */}
+        <button className="flex items-center gap-3 px-4 py-3 rounded-xl text-gray-400 hover:bg-red-900/30 hover:text-red-400">
           <LogOut size={20} />
-          <span className="font-medium">Cerrar Sesión</span>
+          Cerrar Sesión
         </button>
-      </div>
+      </aside>
 
-      {/* Main Content */}
-      <div className="flex-1 p-8 overflow-auto">
+      {/* ================= CONTENIDO ================= */}
+      <main className="flex-1 p-8 overflow-auto">
         <div className="max-w-7xl mx-auto">
-          {/* Header Mejorado */}
-          <div className="bg-gray-800/50 backdrop-blur-xl rounded-2xl p-6 mb-8 border border-gray-700/50 shadow-xl">
-            <div className="flex justify-between items-center">
-              <div>
-                <h1 className="text-3xl font-bold text-white mb-2">Servicios Disponibles</h1>
-                <p className="text-gray-400">Selecciona un servicio para agendar un turno</p>
+
+          {/* Header */}
+          <header className="bg-gray-800/50 rounded-2xl p-6 mb-8 flex justify-between">
+            <div>
+              <h1 className="text-3xl font-bold text-white">
+                Servicios Disponibles
+              </h1>
+              <p className="text-gray-400">
+                Selecciona un servicio para agendar
+              </p>
+            </div>
+
+            {/* Fecha y hora */}
+            <div className="text-right">
+              <div className="text-gray-400 flex items-center gap-2 justify-end">
+                <Calendar size={16} /> {date}
               </div>
-              <div className="text-right">
-                <div className="text-gray-400 text-sm flex items-center gap-2 justify-end mb-1">
-                  <Calendar size={16} />
-                  {date}
-                </div>
-                <div className="text-white text-2xl font-bold flex items-center gap-2 justify-end">
-                  <Clock size={20} />
-                  {time}
-                </div>
+              <div className="text-white text-2xl font-bold flex items-center gap-2 justify-end">
+                <Clock size={20} /> {time}
               </div>
             </div>
-          </div>
+          </header>
 
-          {/* Services Grid Mejorado */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {/* Grid de servicios */}
+          <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {services.map((service) => (
               <button
                 key={service.id}
                 onClick={() => handleServiceClick(service)}
-                className="group bg-gray-800/50 backdrop-blur-xl rounded-2xl p-6 border border-gray-700/50 hover:border-blue-500/50 transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-blue-500/20"
+                className="bg-gray-800/50 rounded-2xl p-4 border border-gray-700 hover:border-blue-500 hover:scale-105 transition"
               >
-                <div className={`bg-gradient-to-br ${service.color} rounded-xl aspect-square mb-4 flex items-center justify-center text-6xl shadow-lg group-hover:scale-110 transition-transform duration-300`}>
-                  {service.icon}
+                {/* Imagen */}
+                <div
+                  className={`bg-gradient-to-br ${service.color} h-32 rounded-xl flex items-center justify-center mb-3`}
+                >
+                  <img
+                    src={service.img}
+                    alt={service.nombre}
+                    className="h-20 w-20 object-contain"
+                  />
                 </div>
-                <h3 className="text-white font-bold text-lg mb-2">{service.nombre}</h3>
-                <div className="flex items-center justify-between">
-                  <span className="text-gray-400 text-sm">Precio</span>
-                  <span className="text-green-400 font-bold text-xl">${service.precio}</span>
-                </div>
+
+                {/* Info */}
+                <h3 className="text-white font-bold">{service.nombre}</h3>
+                <p className="text-green-400 text-xl font-bold">
+                  ${service.precio}
+                </p>
               </button>
             ))}
-          </div>
+          </section>
         </div>
-      </div>
+      </main>
 
-      {/* Modal Mejorado */}
+      {/* ================= MODAL ================= */}
       {showModal && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-gradient-to-br from-gray-800 to-gray-900 rounded-3xl p-8 w-full max-w-md relative shadow-2xl border border-gray-700/50 animate-in">
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
+          <div className="bg-gray-900 rounded-3xl p-8 w-full max-w-md relative">
+
+            {/* Cerrar */}
             <button
               onClick={() => setShowModal(false)}
-              className="absolute top-4 right-4 text-gray-400 hover:text-white hover:bg-gray-700 rounded-full p-2 transition-all"
+              className="absolute top-4 right-4 text-gray-400 hover:text-white"
             >
-              <X size={24} />
+              <X />
             </button>
 
-            <h3 className="text-3xl font-bold text-white mb-2">
+            <h3 className="text-2xl font-bold text-white mb-4">
               Agendar Turno
             </h3>
-            <p className="text-gray-400 mb-6">Complete los datos del cliente</p>
 
-            <div className="space-y-4">
-              <div>
-                <label className="flex items-center gap-2 text-gray-300 mb-2 font-medium">
-                  <User size={18} />
-                  Cliente
-                </label>
-                <input
-                  type="text"
-                  name="cliente"
-                  value={formData.cliente}
-                  onChange={handleInputChange}
-                  className="w-full bg-gray-700/50 text-white rounded-xl px-4 py-3 border border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                  placeholder="Nombre completo"
-                />
-              </div>
+            {/* Inputs */}
+            <input
+              name="cliente"
+              placeholder="Cliente"
+              onChange={handleInputChange}
+              className="w-full mb-3 px-4 py-3 rounded-xl bg-gray-700 text-white"
+            />
 
-              <div>
-                <label className="flex items-center gap-2 text-gray-300 mb-2 font-medium">
-                  <Phone size={18} />
-                  Teléfono
-                </label>
-                <input
-                  type="tel"
-                  name="telefono"
-                  value={formData.telefono}
-                  onChange={handleInputChange}
-                  className="w-full bg-gray-700/50 text-white rounded-xl px-4 py-3 border border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                  placeholder="+54 9 11 1234-5678"
-                />
-              </div>
+            <input
+              name="telefono"
+              placeholder="Teléfono"
+              onChange={handleInputChange}
+              className="w-full mb-3 px-4 py-3 rounded-xl bg-gray-700 text-white"
+            />
 
-              <div>
-                <label className="flex items-center gap-2 text-gray-300 mb-2 font-medium">
-                  <Calendar size={18} />
-                  Fecha
-                </label>
-                <input
-                  type="date"
-                  name="fecha"
-                  value={formData.fecha}
-                  onChange={handleInputChange}
-                  className="w-full bg-gray-700/50 text-white rounded-xl px-4 py-3 border border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                />
-              </div>
+            <input
+              type="date"
+              name="fecha"
+              onChange={handleInputChange}
+              className="w-full mb-3 px-4 py-3 rounded-xl bg-gray-700 text-white"
+            />
 
-              <div>
-                <label className="flex items-center gap-2 text-gray-300 mb-2 font-medium">
-                  <Clock size={18} />
-                  Hora
-                </label>
-                <input
-                  type="time"
-                  name="hora"
-                  value={formData.hora}
-                  onChange={handleInputChange}
-                  className="w-full bg-gray-700/50 text-white rounded-xl px-4 py-3 border border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                />
-              </div>
+            <input
+              type="time"
+              name="hora"
+              onChange={handleInputChange}
+              className="w-full mb-4 px-4 py-3 rounded-xl bg-gray-700 text-white"
+            />
 
-              <div className={`bg-gradient-to-r ${selectedService?.color} rounded-xl p-5 mt-6 shadow-lg`}>
-                <div className="flex items-center justify-between text-white">
-                  <div>
-                    <p className="text-sm opacity-90 mb-1">Servicio seleccionado</p>
-                    <p className="font-bold text-lg">{selectedService?.nombre}</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-sm opacity-90 mb-1">Precio</p>
-                    <p className="font-bold text-2xl">${selectedService?.precio}</p>
-                  </div>
-                </div>
-              </div>
-
-              <button
-                onClick={handleSubmit}
-                className="w-full bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl py-4 font-bold hover:from-blue-700 hover:to-blue-800 transition-all shadow-lg hover:shadow-xl hover:scale-105 mt-6"
-              >
-                Confirmar Turno
-              </button>
-            </div>
+            {/* Confirmar */}
+            <button className="w-full bg-blue-600 py-3 rounded-xl text-white font-bold">
+              Confirmar Turno
+            </button>
           </div>
         </div>
       )}
