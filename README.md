@@ -131,16 +131,18 @@ Próximas mejoras:
 
 ---
 
-## 👤 Autor
+## 👤 Autores
 
 **Ignacio Thomas Benítez**
 Desarrollador Front-End
+
+**Franco Plate Paz**
+Desarrollador Back-End
 
 ---
 
 ## 📄 Licencia
 
-Este proyecto es de uso educativo y personal. Podés adaptarlo y modificarlo libremente.
 
 ---
 
