@@ -30,65 +30,123 @@ const Dashboard = () => {
     // Contenedor principal con altura completa de pantalla
     <div className="flex h-screen bg-slate-950">
       {/* Sidebar - Barra lateral de navegación */}
-      <div className="w-64 bg-slate-900 border-r border-slate-800 p-6 flex flex-col">
+      <div className="w-64 bg-slate-900 border-r border-slate-800 p-6 flex flex-col overflow-y-auto">
         {/* Header del sidebar con logo y nombre del comercio */}
-        <div className="mb-8">
+        <div className="mb-6">
           {/* Logo del comercio con emoji */}
-          <div className="w-20 h-20 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl mb-4 flex items-center justify-center text-4xl">
+          <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl mb-3 flex items-center justify-center text-3xl">
             💈
           </div>
           <h2 className="text-white font-bold text-lg">Nombre del Comercio</h2>
         </div>
 
         {/* Menú de navegación */}
-        <nav className="space-y-2">
-          {/* Botón para navegar a Mesas - activo (con fondo) */}
-          <button
-            onClick={() => navigate("/mesas")}
-            className="w-full text-left px-4 py-3 rounded-lg bg-slate-800 text-white transition"
-          >
-            <BarChart3 className="inline mr-3" size={18} /> Mesas
-          </button>
+        <nav className="space-y-6 flex-1">
+          {/* INFORMES */}
+          <div>
+            <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 px-3">Informes</h3>
+            <div className="space-y-1">
+              <button
+                onClick={() => navigate("/dashboard")}
+                className="w-full text-left px-3 py-2 rounded-lg text-slate-300 hover:bg-slate-800/50 transition text-sm"
+              >
+                <BarChart3 className="inline mr-3" size={16} /> Dashboard
+              </button>
+              <button
+                onClick={() => navigate("/resumenes")}
+                className="w-full text-left px-3 py-2 rounded-lg text-slate-300 hover:bg-slate-800/50 transition text-sm"
+              >
+                📄 Resúmenes
+              </button>
+            </div>
+          </div>
 
-          {/* Botón para navegar a Configuración */}
-          <button
-            onClick={() => navigate("/configuracion")}
-            className="w-full text-left px-4 py-3 rounded-lg text-slate-400 hover:bg-slate-800/50 transition"
-          >
-            <Settings className="inline mr-3" size={18} /> Configuración
-          </button>
+          {/* FINANZAS */}
+          <div>
+            <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 px-3">Finanzas</h3>
+            <div className="space-y-1">
+              <button
+                onClick={() => navigate("/ventas")}
+                className="w-full text-left px-3 py-2 rounded-lg text-slate-300 hover:bg-slate-800/50 transition text-sm"
+              >
+                <ShoppingCart className="inline mr-3" size={16} /> Registrar Ventas
+              </button>
+              <button
+                onClick={() => navigate("/contabilidad")}
+                className="w-full text-left px-3 py-2 rounded-lg text-slate-300 hover:bg-slate-800/50 transition text-sm"
+              >
+                💰 Contabilidad
+              </button>
+              <button
+                onClick={() => navigate("/ingresos-egresos")}
+                className="w-full text-left px-3 py-2 rounded-lg text-slate-300 hover:bg-slate-800/50 transition text-sm"
+              >
+                📊 Ingresos y Egresos
+              </button>
+            </div>
+          </div>
 
-          {/* Botón para navegar a módulo Barbería */}
-          <button
-            onClick={() => navigate("/barberia")}
-            className="w-full text-left px-4 py-3 rounded-lg text-slate-400 hover:bg-slate-800/50 transition"
-          >
-            💈 Barbería
-          </button>
+          {/* STOCK */}
+          <div>
+            <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 px-3">Stock</h3>
+            <div className="space-y-1">
+              <button
+                onClick={() => navigate("/inventario")}
+                className="w-full text-left px-3 py-2 rounded-lg bg-blue-600/20 text-blue-400 transition text-sm"
+              >
+                <Package className="inline mr-3" size={16} /> Productos
+              </button>
+              <button
+                onClick={() => navigate("/proveedores")}
+                className="w-full text-left px-3 py-2 rounded-lg text-slate-300 hover:bg-slate-800/50 transition text-sm"
+              >
+                🚚 Proveedores
+              </button>
+              <button
+                onClick={() => navigate("/compras")}
+                className="w-full text-left px-3 py-2 rounded-lg text-slate-300 hover:bg-slate-800/50 transition text-sm"
+              >
+                🛒 Compras
+              </button>
+            </div>
+          </div>
 
-          {/* Botón para navegar a módulo Kiosco/Almacén */}
-          <button
-            onClick={() => navigate("/kiosco")}
-            className="w-full text-left px-4 py-3 rounded-lg text-slate-400 hover:bg-slate-800/50 transition"
-          >
-            🏪 Almacen / Kiosco 
-          </button>
-
-          {/* Botón para navegar a módulo Restaurantes */}
-          <button
-            onClick={() => navigate("/restaurante")}
-            className="w-full text-left px-4 py-3 rounded-lg text-slate-400 hover:bg-slate-800/50 transition"
-          >
-            🍔 Restaurantes
-          </button>
-
-          {/* Botón para navegar a módulo de Atención al cliente */}
-          <button
-            onClick={() => navigate("/atencion")}
-            className="w-full text-left px-4 py-3 rounded-lg text-slate-400 hover:bg-slate-800/50 transition"
-          >
-            📞 Atencion
-          </button>
+          {/* ADMINISTRACIÓN */}
+          <div>
+            <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 px-3">Administración</h3>
+            <div className="space-y-1">
+              <button
+                onClick={() => navigate("/mesas")}
+                className="w-full text-left px-3 py-2 rounded-lg text-slate-300 hover:bg-slate-800/50 transition text-sm"
+              >
+                🪑 Mesas
+              </button>
+              <button
+                onClick={() => navigate("/empleados")}
+                className="w-full text-left px-3 py-2 rounded-lg text-slate-300 hover:bg-slate-800/50 transition text-sm"
+              >
+                👥 Empleados
+              </button>
+              <button
+                onClick={() => navigate("/turnos")}
+                className="w-full text-left px-3 py-2 rounded-lg text-slate-300 hover:bg-slate-800/50 transition text-sm"
+              >
+                🕐 Turnos
+              </button>
+              <button
+                onClick={() => navigate("/metodos-pago")}
+                className="w-full text-left px-3 py-2 rounded-lg text-slate-300 hover:bg-slate-800/50 transition text-sm"
+              >
+                💳 Métodos de Pago
+              </button>
+              <button
+                onClick={() => navigate("/configuracion")}
+                className="w-full text-left px-3 py-2 rounded-lg text-slate-300 hover:bg-slate-800/50 transition text-sm"
+              >
+                <Settings className="inline mr-3" size={16} /> Información Fiscal
+              </button>
+            </div>
+          </div>
         </nav>
         
         {/* Botón de Cerrar Sesión - ubicado al final del sidebar con mt-auto */}

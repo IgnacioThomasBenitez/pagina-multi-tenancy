@@ -16,15 +16,14 @@ import {
   X,
   Check,
   Filter,
+  Settings,
+  LogOut,
+  BarChart3,
 } from "lucide-react";
-import { useNavigate } from "react-router-dom";
 
 const Sales = () => {
-  const navigate = useNavigate();
-  // Leer productos desde localStorage compartido
   const [products, setProducts] = useState(() => {
     const saved = localStorage.getItem("shared-products");
-    console.log(saved);
     return saved
       ? JSON.parse(saved)
       : [
@@ -81,8 +80,6 @@ const Sales = () => {
 
   const [salesHistory, setSalesHistory] = useState(() => {
     const saved = localStorage.getItem("shared-sales");
-    
-    console.log(saved);
     return saved
       ? JSON.parse(saved)
       : [
@@ -121,24 +118,20 @@ const Sales = () => {
   const [paymentMethod, setPaymentMethod] = useState("efectivo");
   const [customerName, setCustomerName] = useState("");
 
-  // Guardar en localStorage compartido cuando cambien los productos
   useEffect(() => {
     localStorage.setItem("shared-products", JSON.stringify(products));
   }, [products]);
 
-  // Guardar ventas en localStorage
   useEffect(() => {
     localStorage.setItem("shared-sales", JSON.stringify(salesHistory));
   }, [salesHistory]);
 
-  // Escuchar cambios en localStorage desde otras pestañas/ventanas
   useEffect(() => {
     const handleStorageChange = (e) => {
       if (e.key === "shared-products" && e.newValue) {
         setProducts(JSON.parse(e.newValue));
       }
     };
-
     window.addEventListener("storage", handleStorageChange);
     return () => window.removeEventListener("storage", handleStorageChange);
   }, []);
@@ -263,90 +256,109 @@ const Sales = () => {
   return (
     <div className="flex h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
       {/* Sidebar */}
-      <div className="w-80 bg-slate-900/80 backdrop-blur-xl border-r border-slate-700/50 p-6 overflow-auto">
-        <div className="mb-8">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="w-12 h-12 bg-gradient-to-br from-purple-600 to-blue-600 rounded-xl flex items-center justify-center">
-              <ShoppingCart className="text-white" size={24} />
-            </div>
-            <div>
-              <h2 className="text-blue-400 font-bold text-xl">Mi Negocio</h2>
-              <p className="text-slate-400 text-xs">Sistema de Ventas</p>
-            </div>
+      <div className="w-64 bg-slate-900 border-r border-slate-800 p-6 flex flex-col overflow-y-auto">
+        <div className="mb-6">
+          <div className="w-16 h-16 bg-gradient-to-br from-purple-600 to-blue-600 rounded-xl mb-3 flex items-center justify-center text-3xl">
+            🏪
           </div>
+          <h2 className="text-white font-bold text-lg">Mi Negocio</h2>
+          <p className="text-slate-400 text-xs">Sistema de Ventas</p>
         </div>
 
-        <div className="space-y-3 mb-6">
-          <button
-            onClick={() => navigate("/inventario")}
-            className="px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition"
-          >
-            <Package className="inline mr-2" size={18} /> Ir a Inventario
-          </button>
-          <button
-            onClick={() => setShowProductModal(true)}
-            className="w-full px-4 py-3 bg-slate-800 text-slate-300 rounded-xl hover:bg-slate-700 transition border border-slate-700/50"
-          >
-            <Plus className="inline mr-2" size={18} /> Nuevo Producto
-          </button>
-        </div>
-
-        <div className="space-y-3">
-          <div className="bg-gradient-to-br from-green-900/50 to-green-800/30 border border-green-600/30 rounded-xl p-4">
-            <div className="flex items-center gap-2 text-green-400 mb-2">
-              <Clock size={18} /> Ventas de Hoy
+        <nav className="space-y-6 flex-1">
+          <div>
+            <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 px-3">Informes</h3>
+            <div className="space-y-1">
+              <button className="w-full text-left px-3 py-2 rounded-lg text-slate-300 hover:bg-slate-800/50 transition text-sm">
+                <BarChart3 className="inline mr-3" size={16} /> Dashboard
+              </button>
+              <button className="w-full text-left px-3 py-2 rounded-lg text-slate-300 hover:bg-slate-800/50 transition text-sm">
+                📄 Resúmenes
+              </button>
             </div>
-            <p className="text-3xl font-bold text-white">
-              ${todaySales.toLocaleString()}
-            </p>
           </div>
 
-          <div className="bg-gradient-to-br from-blue-900/50 to-blue-800/30 border border-blue-600/30 rounded-xl p-4">
-            <div className="flex items-center gap-2 text-blue-400 mb-2">
-              <TrendingUp size={18} /> Ventas del Mes
+          <div>
+            <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 px-3">Finanzas</h3>
+            <div className="space-y-1">
+              <button className="w-full text-left px-3 py-2 rounded-lg bg-green-600/20 text-green-400 transition text-sm">
+                <ShoppingCart className="inline mr-3" size={16} /> Registrar Ventas
+              </button>
+              <button className="w-full text-left px-3 py-2 rounded-lg text-slate-300 hover:bg-slate-800/50 transition text-sm">
+                💰 Contabilidad
+              </button>
+              <button className="w-full text-left px-3 py-2 rounded-lg text-slate-300 hover:bg-slate-800/50 transition text-sm">
+                📊 Ingresos y Egresos
+              </button>
             </div>
-            <p className="text-3xl font-bold text-white">
-              ${monthSales.toLocaleString()}
-            </p>
           </div>
 
-          <div className="bg-gradient-to-br from-purple-900/50 to-purple-800/30 border border-purple-600/30 rounded-xl p-4">
-            <div className="flex items-center gap-2 text-purple-400 mb-2">
-              <Users size={18} /> Transacciones
+          <div>
+            <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 px-3">Stock</h3>
+            <div className="space-y-1">
+              <button className="w-full text-left px-3 py-2 rounded-lg text-slate-300 hover:bg-slate-800/50 transition text-sm">
+                <Package className="inline mr-3" size={16} /> Productos
+              </button>
+              <button className="w-full text-left px-3 py-2 rounded-lg text-slate-300 hover:bg-slate-800/50 transition text-sm">
+                🚚 Proveedores
+              </button>
+              <button className="w-full text-left px-3 py-2 rounded-lg text-slate-300 hover:bg-slate-800/50 transition text-sm">
+                🛒 Compras
+              </button>
             </div>
-            <p className="text-3xl font-bold text-white">
-              {salesHistory.length}
-            </p>
           </div>
 
-          <div
-            className={`bg-gradient-to-br ${
-              lowStockProducts.length > 0
-                ? "from-red-900/50 to-red-800/30 border-red-600/30"
-                : "from-slate-800/50 to-slate-700/30 border-slate-600/30"
-            } border rounded-xl p-4`}
-          >
-            <div
-              className={`flex items-center gap-2 mb-2 ${
-                lowStockProducts.length > 0 ? "text-red-400" : "text-slate-400"
-              }`}
-            >
-              <AlertCircle size={18} /> Alertas de Stock
+          <div>
+            <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 px-3">Administración</h3>
+            <div className="space-y-1">
+              <button className="w-full text-left px-3 py-2 rounded-lg text-slate-300 hover:bg-slate-800/50 transition text-sm">
+                🪑 Puntos de Venta
+              </button>
+              <button className="w-full text-left px-3 py-2 rounded-lg text-slate-300 hover:bg-slate-800/50 transition text-sm">
+                👥 Empleados
+              </button>
+              <button className="w-full text-left px-3 py-2 rounded-lg text-slate-300 hover:bg-slate-800/50 transition text-sm">
+                🕐 Turnos
+              </button>
+              <button className="w-full text-left px-3 py-2 rounded-lg text-slate-300 hover:bg-slate-800/50 transition text-sm">
+                💳 Métodos de Pago
+              </button>
+              <button className="w-full text-left px-3 py-2 rounded-lg text-slate-300 hover:bg-slate-800/50 transition text-sm">
+                <Settings className="inline mr-3" size={16} /> Configuración
+              </button>
             </div>
-            <p className="text-sm text-slate-300">
-              {lowStockProducts.length} productos con stock bajo
-            </p>
-            {lowStockProducts.length > 0 && (
-              <div className="mt-2 space-y-1">
-                {lowStockProducts.map((p) => (
-                  <div key={p.id} className="text-xs text-red-300">
-                    • {p.name}: {p.stock} unidades
-                  </div>
-                ))}
+          </div>
+        </nav>
+
+        <div className="space-y-3 mt-6 pt-6 border-t border-slate-800">
+          <div className="bg-gradient-to-br from-green-900/50 to-green-800/30 border border-green-600/30 rounded-xl p-3">
+            <div className="flex items-center gap-2 text-green-400 mb-1 text-xs">
+              <Clock size={14} /> Ventas de Hoy
+            </div>
+            <p className="text-xl font-bold text-white">${todaySales.toLocaleString()}</p>
+          </div>
+
+          <div className="bg-gradient-to-br from-blue-900/50 to-blue-800/30 border border-blue-600/30 rounded-xl p-3">
+            <div className="flex items-center gap-2 text-blue-400 mb-1 text-xs">
+              <TrendingUp size={14} /> Ventas del Mes
+            </div>
+            <p className="text-xl font-bold text-white">${monthSales.toLocaleString()}</p>
+          </div>
+
+          {lowStockProducts.length > 0 && (
+            <div className="bg-gradient-to-br from-red-900/50 to-red-800/30 border border-red-600/30 rounded-xl p-3">
+              <div className="flex items-center gap-2 text-red-400 mb-1 text-xs">
+                <AlertCircle size={14} /> Alertas de Stock
               </div>
-            )}
-          </div>
+              <p className="text-sm text-slate-300">{lowStockProducts.length} productos bajos</p>
+            </div>
+          )}
         </div>
+        
+        <button className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-gray-400 hover:bg-red-900/30 hover:text-red-400 transition-all mt-6">
+          <LogOut size={20} />
+          <span className="font-medium">Cerrar Sesión</span>
+        </button>
       </div>
 
       {/* Main Content */}
@@ -354,18 +366,20 @@ const Sales = () => {
         <div className="flex items-center justify-between mb-6">
           <div>
             <h1 className="text-4xl font-bold text-white mb-2">Productos</h1>
-            <p className="text-slate-400">
-              {filteredProducts.length} productos disponibles
-            </p>
+            <p className="text-slate-400">{filteredProducts.length} productos disponibles</p>
           </div>
+          <button
+            onClick={() => setShowProductModal(true)}
+            className="px-4 py-2 bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white rounded-lg font-medium transition flex items-center gap-2"
+          >
+            <Plus size={20} />
+            Nuevo Producto
+          </button>
         </div>
 
         <div className="flex gap-4 mb-6">
           <div className="relative flex-1">
-            <Search
-              className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
-              size={20}
-            />
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
             <input
               type="text"
               placeholder="Buscar productos..."
@@ -380,9 +394,7 @@ const Sales = () => {
             className="bg-slate-800/50 border border-slate-700/50 rounded-xl px-4 py-3 text-white"
           >
             {categories.map((cat) => (
-              <option key={cat} value={cat}>
-                {cat}
-              </option>
+              <option key={cat} value={cat}>{cat}</option>
             ))}
           </select>
         </div>
@@ -395,42 +407,28 @@ const Sales = () => {
             >
               <div className="flex justify-between items-start mb-3">
                 <div className="flex-1">
-                  <h3 className="text-lg font-bold text-white mb-1">
-                    {product.name}
-                  </h3>
+                  <h3 className="text-lg font-bold text-white mb-1">{product.name}</h3>
                   <p className="text-slate-400 text-sm">{product.category}</p>
                 </div>
                 {product.stock <= product.minStock && (
-                  <div className="bg-red-500/20 text-red-400 px-2 py-1 rounded-lg text-xs font-semibold">
-                    Bajo
-                  </div>
+                  <div className="bg-red-500/20 text-red-400 px-2 py-1 rounded-lg text-xs font-semibold">Bajo</div>
                 )}
               </div>
 
               <div className="flex items-center justify-between mb-4 pb-4 border-b border-slate-700">
                 <span className="text-slate-400 text-sm">Stock</span>
-                <span
-                  className={`font-bold ${
-                    product.stock <= product.minStock
-                      ? "text-red-400"
-                      : "text-green-400"
-                  }`}
-                >
+                <span className={`font-bold ${product.stock <= product.minStock ? "text-red-400" : "text-green-400"}`}>
                   {product.stock}
                 </span>
               </div>
 
-              <p className="text-3xl font-bold text-green-400 mb-4">
-                ${product.price.toLocaleString()}
-              </p>
+              <p className="text-3xl font-bold text-green-400 mb-4">${product.price.toLocaleString()}</p>
 
               <button
                 onClick={() => addToCart(product)}
                 disabled={product.stock === 0}
                 className={`w-full py-3 rounded-xl font-semibold transition mb-3 ${
-                  product.stock === 0
-                    ? "bg-slate-700 text-slate-500"
-                    : "bg-green-600 text-white hover:bg-green-700"
+                  product.stock === 0 ? "bg-slate-700 text-slate-500" : "bg-green-600 text-white hover:bg-green-700"
                 }`}
               >
                 {product.stock === 0 ? "Sin Stock" : "Agregar"}
@@ -459,15 +457,10 @@ const Sales = () => {
       <div className="w-96 bg-slate-900/80 border-l border-slate-700/50 p-6 flex flex-col">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-2xl font-bold text-white">
-            {cart.length === 0
-              ? "Carrito vacío"
-              : `Carrito (${cartItemsCount})`}
+            {cart.length === 0 ? "Carrito vacío" : `Carrito (${cartItemsCount})`}
           </h2>
           {cart.length > 0 && (
-            <button
-              onClick={() => setCart([])}
-              className="text-red-400 hover:text-red-300"
-            >
+            <button onClick={() => setCart([])} className="text-red-400 hover:text-red-300">
               <Trash2 size={20} />
             </button>
           )}
@@ -481,21 +474,13 @@ const Sales = () => {
         ) : (
           <div className="flex-1 overflow-auto mb-4 space-y-3">
             {cart.map((item) => (
-              <div
-                key={item.id}
-                className="bg-slate-800/50 border border-slate-700/50 rounded-xl p-4"
-              >
+              <div key={item.id} className="bg-slate-800/50 border border-slate-700/50 rounded-xl p-4">
                 <div className="flex justify-between items-start mb-3">
                   <div>
                     <h3 className="text-white font-semibold">{item.name}</h3>
-                    <p className="text-slate-400 text-sm">
-                      ${item.price.toLocaleString()} c/u
-                    </p>
+                    <p className="text-slate-400 text-sm">${item.price.toLocaleString()} c/u</p>
                   </div>
-                  <button
-                    onClick={() => removeFromCart(item.id)}
-                    className="text-red-400"
-                  >
+                  <button onClick={() => removeFromCart(item.id)} className="text-red-400">
                     <X size={18} />
                   </button>
                 </div>
@@ -508,9 +493,7 @@ const Sales = () => {
                     >
                       <Minus size={16} />
                     </button>
-                    <span className="w-12 text-center text-white font-semibold">
-                      {item.qty}
-                    </span>
+                    <span className="w-12 text-center text-white font-semibold">{item.qty}</span>
                     <button
                       onClick={() => updateCartQty(item.id, item.qty + 1)}
                       disabled={item.qty >= item.stock}
@@ -531,9 +514,7 @@ const Sales = () => {
         <div className="mt-auto pt-4 border-t border-slate-700">
           <div className="flex items-center justify-between py-4 mb-4">
             <span className="text-2xl font-bold text-white">Total</span>
-            <span className="text-3xl font-bold text-green-400">
-              ${cartTotal.toLocaleString()}
-            </span>
+            <span className="text-3xl font-bold text-green-400">${cartTotal.toLocaleString()}</span>
           </div>
           <button
             onClick={() => setShowCheckoutModal(true)}
@@ -545,25 +526,20 @@ const Sales = () => {
         </div>
       </div>
 
-      {/* Checkout Modal */}
+      {/* Modals */}
       {showCheckoutModal && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
           <div className="bg-slate-800 rounded-3xl p-8 w-full max-w-md border border-slate-700/50">
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-3xl font-bold text-white">Finalizar Venta</h3>
-              <button
-                onClick={() => setShowCheckoutModal(false)}
-                className="text-slate-400 hover:text-white"
-              >
+              <button onClick={() => setShowCheckoutModal(false)} className="text-slate-400 hover:text-white">
                 <X size={24} />
               </button>
             </div>
 
             <div className="space-y-4 mb-6">
               <div>
-                <label className="block text-slate-300 mb-2">
-                  Cliente (Opcional)
-                </label>
+                <label className="block text-slate-300 mb-2">Cliente (Opcional)</label>
                 <input
                   type="text"
                   value={customerName}
@@ -574,18 +550,14 @@ const Sales = () => {
               </div>
 
               <div>
-                <label className="block text-slate-300 mb-2">
-                  Método de Pago
-                </label>
+                <label className="block text-slate-300 mb-2">Método de Pago</label>
                 <div className="grid grid-cols-3 gap-2">
                   {["efectivo", "tarjeta", "transferencia"].map((method) => (
                     <button
                       key={method}
                       onClick={() => setPaymentMethod(method)}
                       className={`py-3 rounded-xl font-semibold capitalize ${
-                        paymentMethod === method
-                          ? "bg-purple-600 text-white"
-                          : "bg-slate-700/50 text-slate-300"
+                        paymentMethod === method ? "bg-purple-600 text-white" : "bg-slate-700/50 text-slate-300"
                       }`}
                     >
                       {method}
@@ -597,21 +569,15 @@ const Sales = () => {
               <div className="bg-slate-700/30 rounded-xl p-4 border border-slate-600/50">
                 <div className="flex justify-between mb-2">
                   <span className="text-slate-300">Productos:</span>
-                  <span className="text-white font-semibold">
-                    {cartItemsCount}
-                  </span>
+                  <span className="text-white font-semibold">{cartItemsCount}</span>
                 </div>
                 <div className="flex justify-between mb-2">
                   <span className="text-slate-300">Método:</span>
-                  <span className="text-white font-semibold capitalize">
-                    {paymentMethod}
-                  </span>
+                  <span className="text-white font-semibold capitalize">{paymentMethod}</span>
                 </div>
                 <div className="flex justify-between pt-3 border-t border-slate-600 mt-3">
                   <span className="text-xl font-bold text-white">Total:</span>
-                  <span className="text-2xl font-bold text-green-400">
-                    ${cartTotal.toLocaleString()}
-                  </span>
+                  <span className="text-2xl font-bold text-green-400">${cartTotal.toLocaleString()}</span>
                 </div>
               </div>
             </div>
@@ -626,16 +592,12 @@ const Sales = () => {
         </div>
       )}
 
-      {/* Add Product Modal */}
       {showProductModal && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
           <div className="bg-slate-800 rounded-3xl p-8 w-full max-w-md border border-slate-700/50">
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-3xl font-bold text-white">Nuevo Producto</h3>
-              <button
-                onClick={() => setShowProductModal(false)}
-                className="text-slate-400 hover:text-white"
-              >
+              <button onClick={() => setShowProductModal(false)} className="text-slate-400 hover:text-white">
                 <X size={24} />
               </button>
             </div>
@@ -644,18 +606,14 @@ const Sales = () => {
               <input
                 type="text"
                 value={newProduct.name}
-                onChange={(e) =>
-                  setNewProduct({ ...newProduct, name: e.target.value })
-                }
+                onChange={(e) => setNewProduct({ ...newProduct, name: e.target.value })}
                 className="w-full bg-slate-700/50 text-white rounded-xl px-4 py-3 border border-slate-600 focus:outline-none focus:ring-2 focus:ring-purple-500"
                 placeholder="Nombre"
               />
               <input
                 type="text"
                 value={newProduct.category}
-                onChange={(e) =>
-                  setNewProduct({ ...newProduct, category: e.target.value })
-                }
+                onChange={(e) => setNewProduct({ ...newProduct, category: e.target.value })}
                 className="w-full bg-slate-700/50 text-white rounded-xl px-4 py-3 border border-slate-600 focus:outline-none focus:ring-2 focus:ring-purple-500"
                 placeholder="Categoría"
               />
@@ -663,18 +621,14 @@ const Sales = () => {
                 <input
                   type="number"
                   value={newProduct.price}
-                  onChange={(e) =>
-                    setNewProduct({ ...newProduct, price: e.target.value })
-                  }
+                  onChange={(e) => setNewProduct({ ...newProduct, price: e.target.value })}
                   className="w-full bg-slate-700/50 text-white rounded-xl px-4 py-3 border border-slate-600 focus:outline-none focus:ring-2 focus:ring-purple-500"
                   placeholder="Precio"
                 />
                 <input
                   type="number"
                   value={newProduct.stock}
-                  onChange={(e) =>
-                    setNewProduct({ ...newProduct, stock: e.target.value })
-                  }
+                  onChange={(e) => setNewProduct({ ...newProduct, stock: e.target.value })}
                   className="w-full bg-slate-700/50 text-white rounded-xl px-4 py-3 border border-slate-600 focus:outline-none focus:ring-2 focus:ring-purple-500"
                   placeholder="Stock"
                 />
@@ -682,9 +636,7 @@ const Sales = () => {
               <input
                 type="number"
                 value={newProduct.minStock}
-                onChange={(e) =>
-                  setNewProduct({ ...newProduct, minStock: e.target.value })
-                }
+                onChange={(e) => setNewProduct({ ...newProduct, minStock: e.target.value })}
                 className="w-full bg-slate-700/50 text-white rounded-xl px-4 py-3 border border-slate-600 focus:outline-none focus:ring-2 focus:ring-purple-500"
                 placeholder="Stock Mínimo"
               />
@@ -700,16 +652,12 @@ const Sales = () => {
         </div>
       )}
 
-      {/* Edit Product Modal */}
       {editingProduct && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
           <div className="bg-slate-800 rounded-3xl p-8 w-full max-w-md border border-slate-700/50">
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-3xl font-bold text-white">Editar Producto</h3>
-              <button
-                onClick={() => setEditingProduct(null)}
-                className="text-slate-400 hover:text-white"
-              >
+              <button onClick={() => setEditingProduct(null)} className="text-slate-400 hover:text-white">
                 <X size={24} />
               </button>
             </div>
@@ -718,55 +666,33 @@ const Sales = () => {
               <input
                 type="text"
                 value={editingProduct.name}
-                onChange={(e) =>
-                  setEditingProduct({ ...editingProduct, name: e.target.value })
-                }
+                onChange={(e) => setEditingProduct({ ...editingProduct, name: e.target.value })}
                 className="w-full bg-slate-700/50 text-white rounded-xl px-4 py-3 border border-slate-600 focus:outline-none focus:ring-2 focus:ring-purple-500"
               />
               <input
                 type="text"
                 value={editingProduct.category}
-                onChange={(e) =>
-                  setEditingProduct({
-                    ...editingProduct,
-                    category: e.target.value,
-                  })
-                }
+                onChange={(e) => setEditingProduct({ ...editingProduct, category: e.target.value })}
                 className="w-full bg-slate-700/50 text-white rounded-xl px-4 py-3 border border-slate-600 focus:outline-none focus:ring-2 focus:ring-purple-500"
               />
               <div className="grid grid-cols-2 gap-4">
                 <input
                   type="number"
                   value={editingProduct.price}
-                  onChange={(e) =>
-                    setEditingProduct({
-                      ...editingProduct,
-                      price: parseFloat(e.target.value),
-                    })
-                  }
+                  onChange={(e) => setEditingProduct({ ...editingProduct, price: parseFloat(e.target.value) })}
                   className="w-full bg-slate-700/50 text-white rounded-xl px-4 py-3 border border-slate-600 focus:outline-none focus:ring-2 focus:ring-purple-500"
                 />
                 <input
                   type="number"
                   value={editingProduct.stock}
-                  onChange={(e) =>
-                    setEditingProduct({
-                      ...editingProduct,
-                      stock: parseInt(e.target.value),
-                    })
-                  }
+                  onChange={(e) => setEditingProduct({ ...editingProduct, stock: parseInt(e.target.value) })}
                   className="w-full bg-slate-700/50 text-white rounded-xl px-4 py-3 border border-slate-600 focus:outline-none focus:ring-2 focus:ring-purple-500"
                 />
               </div>
               <input
                 type="number"
                 value={editingProduct.minStock}
-                onChange={(e) =>
-                  setEditingProduct({
-                    ...editingProduct,
-                    minStock: parseInt(e.target.value),
-                  })
-                }
+                onChange={(e) => setEditingProduct({ ...editingProduct, minStock: parseInt(e.target.value) })}
                 className="w-full bg-slate-700/50 text-white rounded-xl px-4 py-3 border border-slate-600 focus:outline-none focus:ring-2 focus:ring-purple-500"
               />
 

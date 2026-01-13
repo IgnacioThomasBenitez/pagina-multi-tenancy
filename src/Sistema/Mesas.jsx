@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Plus, Trash2, Settings, LogOut, ShoppingCart, Package, Edit2 } from 'lucide-react';
+import { X, Plus, Trash2, Settings, LogOut, ShoppingCart, Package, BarChart3 } from 'lucide-react';
 
 export default function RestaurantTableManager() {
   const [tables, setTables] = useState([
@@ -139,37 +139,92 @@ export default function RestaurantTableManager() {
 
   return (
     <div className="flex h-screen bg-slate-950">
-      {/* Sidebar */}
-      <div className="w-64 bg-slate-900 border-r border-slate-800">
-        {/* Logo */}
-        <div className="p-4 flex items-center gap-3 border-b border-slate-800">
-          <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-blue-500 rounded-xl flex items-center justify-center">
-            <span className="text-2xl">🍽️</span>
+      {/* Sidebar - Barra lateral de navegación */}
+      <div className="w-64 bg-slate-900 border-r border-slate-800 p-6 flex flex-col overflow-y-auto">
+        {/* Header del sidebar con logo y nombre del comercio */}
+        <div className="mb-6">
+          {/* Logo del comercio con emoji */}
+          <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-blue-500 rounded-xl mb-3 flex items-center justify-center text-3xl">
+            🍽️
           </div>
+          <h2 className="text-white font-bold text-lg">Restaurante</h2>
+        </div>
+
+        {/* Menú de navegación */}
+        <nav className="space-y-6 flex-1">
+          {/* INFORMES */}
           <div>
-            <h2 className="text-white font-semibold">Restaurante</h2>
+            <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 px-3">Informes</h3>
+            <div className="space-y-1">
+              <button className="w-full text-left px-3 py-2 rounded-lg text-slate-300 hover:bg-slate-800/50 transition text-sm">
+                <BarChart3 className="inline mr-3" size={16} /> Dashboard
+              </button>
+              <button className="w-full text-left px-3 py-2 rounded-lg text-slate-300 hover:bg-slate-800/50 transition text-sm">
+                📄 Resúmenes
+              </button>
+            </div>
           </div>
-        </div>
 
-        {/* Navigation */}
-        <nav className="p-4 space-y-2">
-          <button className="w-full flex items-center gap-3 px-4 py-3 text-white bg-slate-800 rounded-lg">
-            <ShoppingCart size={20} />
-            <span>Mesas</span>
-          </button>
-          <button className="w-full flex items-center gap-3 px-4 py-3 text-slate-300 hover:bg-slate-800 rounded-lg transition">
-            <Settings size={20} />
-            <span>Configuración</span>
-          </button>
+          {/* FINANZAS */}
+          <div>
+            <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 px-3">Finanzas</h3>
+            <div className="space-y-1">
+              <button className="w-full text-left px-3 py-2 rounded-lg text-slate-300 hover:bg-slate-800/50 transition text-sm">
+                <ShoppingCart className="inline mr-3" size={16} /> Registrar Ventas
+              </button>
+              <button className="w-full text-left px-3 py-2 rounded-lg text-slate-300 hover:bg-slate-800/50 transition text-sm">
+                💰 Contabilidad
+              </button>
+              <button className="w-full text-left px-3 py-2 rounded-lg text-slate-300 hover:bg-slate-800/50 transition text-sm">
+                📊 Ingresos y Egresos
+              </button>
+            </div>
+          </div>
+
+          {/* STOCK */}
+          <div>
+            <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 px-3">Stock</h3>
+            <div className="space-y-1">
+              <button className="w-full text-left px-3 py-2 rounded-lg text-slate-300 hover:bg-slate-800/50 transition text-sm">
+                <Package className="inline mr-3" size={16} /> Productos
+              </button>
+              <button className="w-full text-left px-3 py-2 rounded-lg text-slate-300 hover:bg-slate-800/50 transition text-sm">
+                🚚 Proveedores
+              </button>
+              <button className="w-full text-left px-3 py-2 rounded-lg text-slate-300 hover:bg-slate-800/50 transition text-sm">
+                🛒 Compras
+              </button>
+            </div>
+          </div>
+
+          {/* ADMINISTRACIÓN */}
+          <div>
+            <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 px-3">Administración</h3>
+            <div className="space-y-1">
+              <button className="w-full text-left px-3 py-2 rounded-lg bg-purple-600/20 text-purple-400 transition text-sm">
+                🪑 Mesas
+              </button>
+              <button className="w-full text-left px-3 py-2 rounded-lg text-slate-300 hover:bg-slate-800/50 transition text-sm">
+                👥 Empleados
+              </button>
+              <button className="w-full text-left px-3 py-2 rounded-lg text-slate-300 hover:bg-slate-800/50 transition text-sm">
+                🕐 Turnos
+              </button>
+              <button className="w-full text-left px-3 py-2 rounded-lg text-slate-300 hover:bg-slate-800/50 transition text-sm">
+                💳 Métodos de Pago
+              </button>
+              <button className="w-full text-left px-3 py-2 rounded-lg text-slate-300 hover:bg-slate-800/50 transition text-sm">
+                <Settings className="inline mr-3" size={16} /> Configuración
+              </button>
+            </div>
+          </div>
         </nav>
-
-        {/* Logout */}
-        <div className="absolute bottom-0 w-64 p-4 border-t border-slate-800">
-          <button className="w-full flex items-center gap-3 px-4 py-3 text-slate-300 hover:bg-slate-800 rounded-lg transition">
-            <LogOut size={20} />
-            <span>Cerrar Sesión</span>
-          </button>
-        </div>
+        
+        {/* Botón de Cerrar Sesión */}
+        <button className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-gray-400 hover:bg-red-900/30 hover:text-red-400 transition-all mt-auto">
+          <LogOut size={20} />
+          <span className="font-medium">Cerrar Sesión</span>
+        </button>
       </div>
 
       {/* Main Content */}

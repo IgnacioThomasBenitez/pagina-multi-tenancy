@@ -127,7 +127,7 @@ Próximas mejoras:
 * Roles de usuario
 * Autenticación
 * Exportación de datos
-* Backend opcional
+* Backend 
 
 ---
 
