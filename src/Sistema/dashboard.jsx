@@ -1,9 +1,12 @@
 // Dashboard principal
 // Estilo admin oscuro con Tailwind + gráfico
 
+// Importar el Sidebar reutilizable
+import Sidebar from '../components/Sidebar';
+
 import {
-  LineChart,
-  Line,
+  BarChart,
+  Bar,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -23,8 +26,9 @@ const data = [
 
 export default function Dashboard() {
   return (
-    <div className="min-h-screen p-8 text-slate-200 bg-gradient-to-br from-slate-950 via-slate-900 to-black">
-
+    <div className="flex min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-black">
+      <Sidebar />
+      <div className="flex-1 p-8 text-slate-200">
       {/* TÍTULO */}
       <header className="mb-8">
         <h1 className="text-3xl font-bold">Panel de Administración</h1>
@@ -48,22 +52,21 @@ export default function Dashboard() {
 
         <div className="h-[300px]">
           <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={data}>
+            <BarChart data={data}>
               <CartesianGrid strokeDasharray="3 3" stroke="#1f2937" />
               <XAxis dataKey="name" stroke="#94a3b8" />
               <YAxis stroke="#94a3b8" />
               <Tooltip />
-              <Line
-                type="monotone"
+              <Bar
                 dataKey="ventas"
-                stroke="#6366f1"
-                strokeWidth={3}
-                dot={{ r: 4 }}
+                fill="#6366f1"
+                radius={[8, 8, 0, 0]}
               />
-            </LineChart>
+            </BarChart>
           </ResponsiveContainer>
         </div>
       </section>
+      </div>
     </div>
   );
 }

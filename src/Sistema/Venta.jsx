@@ -1,7 +1,5 @@
 import React, { useState, useEffect } from "react";
-// Importar el Sidebar reutilizable
 import Sidebar from '../components/Sidebar';
-
 import {
   ShoppingCart,
   Package,
@@ -265,7 +263,7 @@ const Sales = () => {
       <div className="flex-1 p-8 overflow-auto">
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h1 className="text-4xl font-bold text-white mb-2">Productos</h1>
+            <h1 className="text-4xl font-bold text-white mb-2">Ventas</h1>
             <p className="text-slate-400">{filteredProducts.length} productos disponibles</p>
           </div>
           <button

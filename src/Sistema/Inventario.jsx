@@ -112,7 +112,7 @@ export default function Inventory() {
         <div className="p-8">
           {/* Header */}
           <div className="mb-8">
-            <h1 className="text-3xl font-bold text-white mb-2">Productos</h1>
+            <h1 className="text-3xl font-bold text-white mb-2">Inventario</h1>
             <p className="text-slate-400">Gestiona el inventario del almacén. Total de productos: {products.length}</p>
           </div>
 
