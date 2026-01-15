@@ -10,6 +10,7 @@ import Venta from "./Sistema/Venta";
 import Atencion from "./Sistema/Atencion";
 import Mesas from "./Sistema/Mesas";
 import Dashboard from "./Sistema/dashboard";
+import Turnos from "./Sistema/turnos";
 
 // Importación del componente Administrar desde la carpeta Cliente
 import Administrar from "./Cliente/Administrar";
@@ -39,6 +40,9 @@ export default function AppRoutes() {
       
       {/* Ruta para el módulo de dashboard */}
       <Route path="/dashboard" element={<Dashboard />} />
+      
+      {/* Ruta para el módulo de turnos */}
+      <Route path="/turnos" element={<Turnos />} />
     </Routes>
   );
 }

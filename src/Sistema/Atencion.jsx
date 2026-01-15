@@ -6,18 +6,10 @@
 import React, { useState, useEffect } from "react";
 
 // Íconos de lucide-react
-import {
-  X,
-  Calendar,
-  Clock,
-  User,
-  Phone,
-  Home,
-  Settings,
-  BarChart,
-  Users,
-  LogOut,
-} from "lucide-react";
+import { X, Calendar, Clock } from "lucide-react";
+
+// Componente reutilizable
+import Sidebar from "../components/Sidebar";
 
 // Imágenes de los servicios
 import corteImg from "../assets/services/corte.png";
@@ -30,7 +22,11 @@ import pedicureImg from "../assets/services/pedicure.png";
 // ==============================
 // COMPONENTE PRINCIPAL
 // ==============================
-const Dashboard = () => {
+export default function Dashboard() {
+  // ==============================
+  // ESTADOS
+  // ==============================
+  
   // Servicio seleccionado para el turno
   const [selectedService, setSelectedService] = useState(null);
 
@@ -110,17 +106,6 @@ const Dashboard = () => {
   ];
 
   // ==============================
-  // ITEMS DEL MENÚ LATERAL
-  // ==============================
-  const menuItems = [
-    { icon: Home, label: "Inicio", active: true },
-    { icon: Calendar, label: "Agenda" },
-    { icon: Users, label: "Clientes" },
-    { icon: BarChart, label: "Reportes" },
-    { icon: Settings, label: "Configuración" },
-  ];
-
-  // ==============================
   // HANDLERS
   // ==============================
 
@@ -138,6 +123,16 @@ const Dashboard = () => {
       ...formData,
       [e.target.name]: e.target.value,
     });
+  };
+
+  // Confirmar turno
+  const handleConfirm = () => {
+    // Aquí irá la lógica para guardar el turno
+    console.log("Turno confirmado:", {
+      servicio: selectedService,
+      ...formData,
+    });
+    setShowModal(false);
   };
 
   // ==============================
@@ -162,46 +157,12 @@ const Dashboard = () => {
   // ==============================
   return (
     <div className="flex h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">
-
-      {/* ================= SIDEBAR ================= */}
-      <aside className="w-72 bg-gray-900/50 border-r border-gray-700 p-6 flex flex-col">
-        {/* Logo */}
-        <div className="mb-8 text-center">
-          <div className="w-24 h-24 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl mx-auto mb-4 flex items-center justify-center">
-            <span className="text-4xl">💼</span>
-          </div>
-          <h2 className="text-white text-xl font-bold">Mi Negocio</h2>
-          <p className="text-gray-400 text-sm">Sistema de Turnos</p>
-        </div>
-
-        {/* Menú */}
-        <nav className="space-y-2 flex-1">
-          {menuItems.map((item, i) => (
-            <button
-              key={i}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl ${
-                item.active
-                  ? "bg-blue-600 text-white"
-                  : "text-gray-400 hover:bg-gray-800 hover:text-white"
-              }`}
-            >
-              <item.icon size={20} />
-              {item.label}
-            </button>
-          ))}
-        </nav>
-
-        {/* Logout */}
-        <button className="flex items-center gap-3 px-4 py-3 rounded-xl text-gray-400 hover:bg-red-900/30 hover:text-red-400">
-          <LogOut size={20} />
-          Cerrar Sesión
-        </button>
-      </aside>
+      {/* ================= SIDEBAR REUTILIZABLE ================= */}
+      <Sidebar />
 
       {/* ================= CONTENIDO ================= */}
       <main className="flex-1 p-8 overflow-auto">
         <div className="max-w-7xl mx-auto">
-
           {/* Header */}
           <header className="bg-gray-800/50 rounded-2xl p-6 mb-8 flex justify-between">
             <div>
@@ -258,7 +219,6 @@ const Dashboard = () => {
       {showModal && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
           <div className="bg-gray-900 rounded-3xl p-8 w-full max-w-md relative">
-
             {/* Cerrar */}
             <button
               onClick={() => setShowModal(false)}
@@ -271,37 +231,55 @@ const Dashboard = () => {
               Agendar Turno
             </h3>
 
+            {/* Info del servicio seleccionado */}
+            {selectedService && (
+              <div className="mb-4 p-4 bg-gray-800 rounded-xl">
+                <p className="text-gray-400 text-sm">Servicio seleccionado:</p>
+                <p className="text-white font-bold">{selectedService.nombre}</p>
+                <p className="text-green-400 font-bold">
+                  ${selectedService.precio}
+                </p>
+              </div>
+            )}
+
             {/* Inputs */}
             <input
               name="cliente"
-              placeholder="Cliente"
+              value={formData.cliente}
+              placeholder="Nombre del cliente"
               onChange={handleInputChange}
-              className="w-full mb-3 px-4 py-3 rounded-xl bg-gray-700 text-white"
+              className="w-full mb-3 px-4 py-3 rounded-xl bg-gray-700 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
 
             <input
               name="telefono"
+              value={formData.telefono}
               placeholder="Teléfono"
               onChange={handleInputChange}
-              className="w-full mb-3 px-4 py-3 rounded-xl bg-gray-700 text-white"
+              className="w-full mb-3 px-4 py-3 rounded-xl bg-gray-700 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
 
             <input
               type="date"
               name="fecha"
+              value={formData.fecha}
               onChange={handleInputChange}
-              className="w-full mb-3 px-4 py-3 rounded-xl bg-gray-700 text-white"
+              className="w-full mb-3 px-4 py-3 rounded-xl bg-gray-700 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
 
             <input
               type="time"
               name="hora"
+              value={formData.hora}
               onChange={handleInputChange}
-              className="w-full mb-4 px-4 py-3 rounded-xl bg-gray-700 text-white"
+              className="w-full mb-4 px-4 py-3 rounded-xl bg-gray-700 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
 
             {/* Confirmar */}
-            <button className="w-full bg-blue-600 py-3 rounded-xl text-white font-bold">
+            <button
+              onClick={handleConfirm}
+              className="w-full bg-blue-600 hover:bg-blue-700 py-3 rounded-xl text-white font-bold transition"
+            >
               Confirmar Turno
             </button>
           </div>
@@ -309,6 +287,4 @@ const Dashboard = () => {
       )}
     </div>
   );
-};
-
-export default Dashboard;
+}

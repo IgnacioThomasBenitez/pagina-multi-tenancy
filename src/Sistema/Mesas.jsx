@@ -1,11 +1,15 @@
 import React, { useState } from 'react';
 import { X, Plus, Trash2, Settings, LogOut, ShoppingCart, Package, BarChart3 } from 'lucide-react';
 
+// Importar el Sidebar reutilizable
+import Sidebar from '../components/Sidebar';
+
+
 export default function RestaurantTableManager() {
   const [tables, setTables] = useState([
     { id: 1, name: 'Mesa 1', status: 'OCUPADO', orders: [
-      { id: 1, name: 'Hamburguesa completa', category: 'Comida 1', price: 4500, quantity: 1 },
-      { id: 2, name: 'Coca Cola', category: 'Bebidas', price: 2000, quantity: 1 }
+      { id: 1, name: 'Hamburguesa completa', category: 'Comida 1', price: 4500, quantity: 1, notes: '' },
+      { id: 2, name: 'Coca Cola', category: 'Bebidas', price: 2000, quantity: 1, notes: '' }
     ], attendedBy: 'Juan', date: '9/1/2025, 03:34:48' },
     { id: 2, name: 'Mesa 2', status: 'ESPERA', orders: [], attendedBy: 'María', date: '9/1/2025, 04:15:22' },
     { id: 3, name: 'Mesa 3', status: 'LIBRE', orders: [], attendedBy: '-', date: '-' }
@@ -15,7 +19,10 @@ export default function RestaurantTableManager() {
   const [showModal, setShowModal] = useState(false);
   const [showAddTableModal, setShowAddTableModal] = useState(false);
   const [newTableName, setNewTableName] = useState('');
+  const [newTableAttendant, setNewTableAttendant] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('Todas');
+
+  const attendants = ['Juan', 'María', 'Carlos', 'Ana', 'Pedro', 'Lucía'];
 
   const statusColors = {
     OCUPADO: 'bg-orange-500',
@@ -46,11 +53,12 @@ export default function RestaurantTableManager() {
         name: newTableName,
         status: 'LIBRE',
         orders: [],
-        attendedBy: '-',
+        attendedBy: newTableAttendant || '-',
         date: '-'
       };
       setTables([...tables, newTable]);
       setNewTableName('');
+      setNewTableAttendant('');
       setShowAddTableModal(false);
     }
   };
@@ -61,17 +69,8 @@ export default function RestaurantTableManager() {
   };
 
   const addOrderItem = (item) => {
-    const existingItem = selectedTable.orders.find(o => o.name === item.name);
-    
-    if (existingItem) {
-      const updatedOrders = selectedTable.orders.map(o =>
-        o.name === item.name ? { ...o, quantity: o.quantity + 1 } : o
-      );
-      setSelectedTable({ ...selectedTable, orders: updatedOrders });
-    } else {
-      const newOrder = { ...item, id: Date.now(), quantity: 1 };
-      setSelectedTable({ ...selectedTable, orders: [...selectedTable.orders, newOrder] });
-    }
+    const newOrder = { ...item, id: Date.now(), quantity: 1, notes: '' };
+    setSelectedTable({ ...selectedTable, orders: [...selectedTable.orders, newOrder] });
   };
 
   const removeOrderItem = (id) => {
@@ -88,6 +87,13 @@ export default function RestaurantTableManager() {
       return item;
     }).filter(item => item.quantity > 0);
     
+    setSelectedTable({ ...selectedTable, orders: updatedOrders });
+  };
+
+  const updateOrderNotes = (id, notes) => {
+    const updatedOrders = selectedTable.orders.map(item =>
+      item.id === id ? { ...item, notes } : item
+    );
     setSelectedTable({ ...selectedTable, orders: updatedOrders });
   };
 
@@ -140,93 +146,7 @@ export default function RestaurantTableManager() {
   return (
     <div className="flex h-screen bg-slate-950">
       {/* Sidebar - Barra lateral de navegación */}
-      <div className="w-64 bg-slate-900 border-r border-slate-800 p-6 flex flex-col overflow-y-auto">
-        {/* Header del sidebar con logo y nombre del comercio */}
-        <div className="mb-6">
-          {/* Logo del comercio con emoji */}
-          <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-blue-500 rounded-xl mb-3 flex items-center justify-center text-3xl">
-            🍽️
-          </div>
-          <h2 className="text-white font-bold text-lg">Restaurante</h2>
-        </div>
-
-        {/* Menú de navegación */}
-        <nav className="space-y-6 flex-1">
-          {/* INFORMES */}
-          <div>
-            <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 px-3">Informes</h3>
-            <div className="space-y-1">
-              <button className="w-full text-left px-3 py-2 rounded-lg text-slate-300 hover:bg-slate-800/50 transition text-sm">
-                <BarChart3 className="inline mr-3" size={16} /> Dashboard
-              </button>
-              <button className="w-full text-left px-3 py-2 rounded-lg text-slate-300 hover:bg-slate-800/50 transition text-sm">
-                📄 Resúmenes
-              </button>
-            </div>
-          </div>
-
-          {/* FINANZAS */}
-          <div>
-            <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 px-3">Finanzas</h3>
-            <div className="space-y-1">
-              <button className="w-full text-left px-3 py-2 rounded-lg text-slate-300 hover:bg-slate-800/50 transition text-sm">
-                <ShoppingCart className="inline mr-3" size={16} /> Registrar Ventas
-              </button>
-              <button className="w-full text-left px-3 py-2 rounded-lg text-slate-300 hover:bg-slate-800/50 transition text-sm">
-                💰 Contabilidad
-              </button>
-              <button className="w-full text-left px-3 py-2 rounded-lg text-slate-300 hover:bg-slate-800/50 transition text-sm">
-                📊 Ingresos y Egresos
-              </button>
-            </div>
-          </div>
-
-          {/* STOCK */}
-          <div>
-            <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 px-3">Stock</h3>
-            <div className="space-y-1">
-              <button className="w-full text-left px-3 py-2 rounded-lg text-slate-300 hover:bg-slate-800/50 transition text-sm">
-                <Package className="inline mr-3" size={16} /> Productos
-              </button>
-              <button className="w-full text-left px-3 py-2 rounded-lg text-slate-300 hover:bg-slate-800/50 transition text-sm">
-                🚚 Proveedores
-              </button>
-              <button className="w-full text-left px-3 py-2 rounded-lg text-slate-300 hover:bg-slate-800/50 transition text-sm">
-                🛒 Compras
-              </button>
-            </div>
-          </div>
-
-          {/* ADMINISTRACIÓN */}
-          <div>
-            <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 px-3">Administración</h3>
-            <div className="space-y-1">
-              <button className="w-full text-left px-3 py-2 rounded-lg bg-purple-600/20 text-purple-400 transition text-sm">
-                🪑 Mesas
-              </button>
-              <button className="w-full text-left px-3 py-2 rounded-lg text-slate-300 hover:bg-slate-800/50 transition text-sm">
-                👥 Empleados
-              </button>
-              <button className="w-full text-left px-3 py-2 rounded-lg text-slate-300 hover:bg-slate-800/50 transition text-sm">
-                🕐 Turnos
-              </button>
-              <button className="w-full text-left px-3 py-2 rounded-lg text-slate-300 hover:bg-slate-800/50 transition text-sm">
-                💳 Métodos de Pago
-              </button>
-              <button className="w-full text-left px-3 py-2 rounded-lg text-slate-300 hover:bg-slate-800/50 transition text-sm">
-                <Settings className="inline mr-3" size={16} /> Configuración
-              </button>
-            </div>
-          </div>
-        </nav>
-        
-        {/* Botón de Cerrar Sesión */}
-        <button className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-gray-400 hover:bg-red-900/30 hover:text-red-400 transition-all mt-auto">
-          <LogOut size={20} />
-          <span className="font-medium">Cerrar Sesión</span>
-        </button>
-      </div>
-
+            <Sidebar />
       {/* Main Content */}
       <div className="flex-1 overflow-auto">
         <div className="p-8">
@@ -345,37 +265,52 @@ export default function RestaurantTableManager() {
                   ) : (
                     <div className="space-y-3">
                       {selectedTable.orders.map(item => (
-                        <div key={item.id} className="flex justify-between items-center bg-slate-800 border border-slate-700 p-4 rounded-lg">
-                          <div className="flex-1">
-                            <div className="font-medium text-white">{item.name}</div>
-                            <div className="text-sm text-slate-400">{item.category}</div>
-                          </div>
-                          <div className="flex items-center gap-3">
-                            <div className="flex items-center gap-2 bg-slate-700 rounded-lg">
+                        <div key={item.id} className="bg-slate-800 border border-slate-700 p-4 rounded-lg">
+                          <div className="flex justify-between items-start mb-3">
+                            <div className="flex-1">
+                              <div className="font-medium text-white">{item.name}</div>
+                              <div className="text-sm text-slate-400">{item.category}</div>
+                            </div>
+                            <div className="flex items-center gap-3">
+                              <div className="flex items-center gap-2 bg-slate-700 rounded-lg">
+                                <button 
+                                  onClick={() => updateQuantity(item.id, -1)}
+                                  className="px-2 py-1 hover:bg-slate-600 rounded-l-lg text-white"
+                                >
+                                  -
+                                </button>
+                                <span className="px-3 text-white font-medium">{item.quantity}</span>
+                                <button 
+                                  onClick={() => updateQuantity(item.id, 1)}
+                                  className="px-2 py-1 hover:bg-slate-600 rounded-r-lg text-white"
+                                >
+                                  +
+                                </button>
+                              </div>
+                              <span className="font-semibold text-white w-20 text-right">
+                                ${item.price * item.quantity}
+                              </span>
                               <button 
-                                onClick={() => updateQuantity(item.id, -1)}
-                                className="px-2 py-1 hover:bg-slate-600 rounded-l-lg text-white"
+                                onClick={() => removeOrderItem(item.id)} 
+                                className="text-red-400 hover:text-red-300 transition"
                               >
-                                -
-                              </button>
-                              <span className="px-3 text-white font-medium">{item.quantity}</span>
-                              <button 
-                                onClick={() => updateQuantity(item.id, 1)}
-                                className="px-2 py-1 hover:bg-slate-600 rounded-r-lg text-white"
-                              >
-                                +
+                                <Trash2 size={18} />
                               </button>
                             </div>
-                            <span className="font-semibold text-white w-20 text-right">
-                              ${item.price * item.quantity}
-                            </span>
-                            <button 
-                              onClick={() => removeOrderItem(item.id)} 
-                              className="text-red-400 hover:text-red-300 transition"
-                            >
-                              <Trash2 size={18} />
-                            </button>
                           </div>
+                          <input
+                            type="text"
+                            value={item.notes || ''}
+                            onChange={(e) => updateOrderNotes(item.id, e.target.value)}
+                            placeholder="Ej: Sin cebolla, sin mayonesa, extra queso..."
+                            className="w-full bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-400 focus:outline-none focus:border-purple-500 transition"
+                          />
+                          {item.notes && (
+                            <div className="mt-2 text-xs text-yellow-400 flex items-center gap-1">
+                              <span>📝</span>
+                              <span className="font-medium">{item.notes}</span>
+                            </div>
+                          )}
                         </div>
                       ))}
                     </div>
@@ -455,24 +390,46 @@ export default function RestaurantTableManager() {
               </button>
             </div>
             
-            <div className="mb-6">
-              <label className="block text-slate-300 text-sm font-medium mb-2">
-                Nombre de la Mesa
-              </label>
-              <input
-                type="text"
-                value={newTableName}
-                onChange={(e) => setNewTableName(e.target.value)}
-                placeholder="Ej: Mesa 4"
-                className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:border-purple-500 transition"
-                onKeyPress={(e) => e.key === 'Enter' && addNewTable()}
-                autoFocus
-              />
+            <div className="space-y-4 mb-6">
+              <div>
+                <label className="block text-slate-300 text-sm font-medium mb-2">
+                  Nombre de la Mesa
+                </label>
+                <input
+                  type="text"
+                  value={newTableName}
+                  onChange={(e) => setNewTableName(e.target.value)}
+                  placeholder="Ej: Mesa 4"
+                  className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:border-purple-500 transition"
+                  onKeyPress={(e) => e.key === 'Enter' && addNewTable()}
+                  autoFocus
+                />
+              </div>
+
+              <div>
+                <label className="block text-slate-300 text-sm font-medium mb-2">
+                  Atendido por (opcional)
+                </label>
+                <select
+                  value={newTableAttendant}
+                  onChange={(e) => setNewTableAttendant(e.target.value)}
+                  className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-purple-500 transition"
+                >
+                  <option value="">Seleccionar mesero...</option>
+                  {attendants.map(attendant => (
+                    <option key={attendant} value={attendant}>{attendant}</option>
+                  ))}
+                </select>
+              </div>
             </div>
 
             <div className="flex gap-3">
               <button
-                onClick={() => setShowAddTableModal(false)}
+                onClick={() => {
+                  setShowAddTableModal(false);
+                  setNewTableName('');
+                  setNewTableAttendant('');
+                }}
                 className="flex-1 bg-slate-800 hover:bg-slate-700 text-white py-3 rounded-lg transition font-medium"
               >
                 Cancelar

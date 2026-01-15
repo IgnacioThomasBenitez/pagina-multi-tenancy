@@ -1,4 +1,7 @@
 import React, { useState, useEffect } from "react";
+// Importar el Sidebar reutilizable
+import Sidebar from '../components/Sidebar';
+
 import {
   ShoppingCart,
   Package,
@@ -256,110 +259,7 @@ const Sales = () => {
   return (
     <div className="flex h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
       {/* Sidebar */}
-      <div className="w-64 bg-slate-900 border-r border-slate-800 p-6 flex flex-col overflow-y-auto">
-        <div className="mb-6">
-          <div className="w-16 h-16 bg-gradient-to-br from-purple-600 to-blue-600 rounded-xl mb-3 flex items-center justify-center text-3xl">
-            🏪
-          </div>
-          <h2 className="text-white font-bold text-lg">Mi Negocio</h2>
-          <p className="text-slate-400 text-xs">Sistema de Ventas</p>
-        </div>
-
-        <nav className="space-y-6 flex-1">
-          <div>
-            <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 px-3">Informes</h3>
-            <div className="space-y-1">
-              <button className="w-full text-left px-3 py-2 rounded-lg text-slate-300 hover:bg-slate-800/50 transition text-sm">
-                <BarChart3 className="inline mr-3" size={16} /> Dashboard
-              </button>
-              <button className="w-full text-left px-3 py-2 rounded-lg text-slate-300 hover:bg-slate-800/50 transition text-sm">
-                📄 Resúmenes
-              </button>
-            </div>
-          </div>
-
-          <div>
-            <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 px-3">Finanzas</h3>
-            <div className="space-y-1">
-              <button className="w-full text-left px-3 py-2 rounded-lg bg-green-600/20 text-green-400 transition text-sm">
-                <ShoppingCart className="inline mr-3" size={16} /> Registrar Ventas
-              </button>
-              <button className="w-full text-left px-3 py-2 rounded-lg text-slate-300 hover:bg-slate-800/50 transition text-sm">
-                💰 Contabilidad
-              </button>
-              <button className="w-full text-left px-3 py-2 rounded-lg text-slate-300 hover:bg-slate-800/50 transition text-sm">
-                📊 Ingresos y Egresos
-              </button>
-            </div>
-          </div>
-
-          <div>
-            <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 px-3">Stock</h3>
-            <div className="space-y-1">
-              <button className="w-full text-left px-3 py-2 rounded-lg text-slate-300 hover:bg-slate-800/50 transition text-sm">
-                <Package className="inline mr-3" size={16} /> Productos
-              </button>
-              <button className="w-full text-left px-3 py-2 rounded-lg text-slate-300 hover:bg-slate-800/50 transition text-sm">
-                🚚 Proveedores
-              </button>
-              <button className="w-full text-left px-3 py-2 rounded-lg text-slate-300 hover:bg-slate-800/50 transition text-sm">
-                🛒 Compras
-              </button>
-            </div>
-          </div>
-
-          <div>
-            <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 px-3">Administración</h3>
-            <div className="space-y-1">
-              <button className="w-full text-left px-3 py-2 rounded-lg text-slate-300 hover:bg-slate-800/50 transition text-sm">
-                🪑 Puntos de Venta
-              </button>
-              <button className="w-full text-left px-3 py-2 rounded-lg text-slate-300 hover:bg-slate-800/50 transition text-sm">
-                👥 Empleados
-              </button>
-              <button className="w-full text-left px-3 py-2 rounded-lg text-slate-300 hover:bg-slate-800/50 transition text-sm">
-                🕐 Turnos
-              </button>
-              <button className="w-full text-left px-3 py-2 rounded-lg text-slate-300 hover:bg-slate-800/50 transition text-sm">
-                💳 Métodos de Pago
-              </button>
-              <button className="w-full text-left px-3 py-2 rounded-lg text-slate-300 hover:bg-slate-800/50 transition text-sm">
-                <Settings className="inline mr-3" size={16} /> Configuración
-              </button>
-            </div>
-          </div>
-        </nav>
-
-        <div className="space-y-3 mt-6 pt-6 border-t border-slate-800">
-          <div className="bg-gradient-to-br from-green-900/50 to-green-800/30 border border-green-600/30 rounded-xl p-3">
-            <div className="flex items-center gap-2 text-green-400 mb-1 text-xs">
-              <Clock size={14} /> Ventas de Hoy
-            </div>
-            <p className="text-xl font-bold text-white">${todaySales.toLocaleString()}</p>
-          </div>
-
-          <div className="bg-gradient-to-br from-blue-900/50 to-blue-800/30 border border-blue-600/30 rounded-xl p-3">
-            <div className="flex items-center gap-2 text-blue-400 mb-1 text-xs">
-              <TrendingUp size={14} /> Ventas del Mes
-            </div>
-            <p className="text-xl font-bold text-white">${monthSales.toLocaleString()}</p>
-          </div>
-
-          {lowStockProducts.length > 0 && (
-            <div className="bg-gradient-to-br from-red-900/50 to-red-800/30 border border-red-600/30 rounded-xl p-3">
-              <div className="flex items-center gap-2 text-red-400 mb-1 text-xs">
-                <AlertCircle size={14} /> Alertas de Stock
-              </div>
-              <p className="text-sm text-slate-300">{lowStockProducts.length} productos bajos</p>
-            </div>
-          )}
-        </div>
-        
-        <button className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-gray-400 hover:bg-red-900/30 hover:text-red-400 transition-all mt-6">
-          <LogOut size={20} />
-          <span className="font-medium">Cerrar Sesión</span>
-        </button>
-      </div>
+      <Sidebar />
 
       {/* Main Content */}
       <div className="flex-1 p-8 overflow-auto">

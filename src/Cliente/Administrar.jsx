@@ -1,234 +1,198 @@
 // Importación de React
 import React from 'react';
-// Importación de iconos de lucide-react para la interfaz
-import { ShoppingCart, Package, BarChart3, Settings } from 'lucide-react';
-// Hook para navegación entre rutas
+// Importación de iconos
+import { ShoppingCart, Package, TrendingUp, Users, DollarSign, Calendar } from 'lucide-react';
+// Hook para navegación
 import { useNavigate } from "react-router-dom";
-// Icono adicional para cerrar sesión
-import { LogOut } from "lucide-react";
+// Importar el Sidebar reutilizable
+import Sidebar from '../components/Sidebar';
 
-// Componente principal del Dashboard (Panel de Administración)
-const Dashboard = () => {
-  // Hook para manejar la navegación programática
+// Componente de la página de Inicio
+export default function Inicio() {
   const navigate = useNavigate();
 
-  // Datos estáticos de estadísticas para mostrar en tarjetas
+  // Datos estáticos de estadísticas principales
   const stats = [
-    { label: 'Productos', value: '120' },
-    { label: 'Pedidos Hoy', value: '18' },
-    { label: 'Clientes', value: '57' }
+    { 
+      label: 'Ventas de Hoy', 
+      value: '$42,850', 
+      icon: DollarSign,
+      color: 'from-green-500 to-emerald-600',
+      change: '+12.5%'
+    },
+    { 
+      label: 'Productos', 
+      value: '120', 
+      icon: Package,
+      color: 'from-blue-500 to-cyan-600',
+      change: '+3'
+    },
+    { 
+      label: 'Pedidos Hoy', 
+      value: '18', 
+      icon: ShoppingCart,
+      color: 'from-purple-500 to-pink-600',
+      change: '+5'
+    },
+    { 
+      label: 'Clientes', 
+      value: '57', 
+      icon: Users,
+      color: 'from-orange-500 to-red-600',
+      change: '+8'
+    }
   ];
 
-  // Datos estáticos de movimientos recientes para mostrar en la tabla
-  const recentMovements = [
-    { id: 1, action: 'Nuevo producto agregado', date: '20 Nov 2025', status: 'Completado' },
-    { id: 2, action: 'Pedido recibido', date: '19 Nov 2025', status: 'Pendiente' },
-    { id: 3, action: 'Actualización de precio', date: '18 Nov 2025', status: 'Completado' }
+  // Datos de accesos rápidos
+  const quickAccess = [
+    { 
+      title: 'Registrar Venta', 
+      icon: ShoppingCart, 
+      path: '/ventas',
+      description: 'Nueva transacción',
+      color: 'from-purple-500 to-purple-600'
+    },
+    { 
+      title: 'Inventario', 
+      icon: Package, 
+      path: '/inventario',
+      description: 'Gestionar productos',
+      color: 'from-blue-500 to-blue-600'
+    },
+    { 
+      title: 'Mesas', 
+      icon: Calendar, 
+      path: '/mesas',
+      description: 'Ver disponibilidad',
+      color: 'from-green-500 to-green-600'
+    },
+    { 
+      title: 'Reportes', 
+      icon: TrendingUp, 
+      path: '/resumenes',
+      description: 'Análisis y métricas',
+      color: 'from-orange-500 to-orange-600'
+    }
   ];
+
+  // Datos estáticos de actividad reciente
+  const recentActivity = [
+    { id: 1, action: 'Nueva venta registrada', amount: '$1,250', date: '10:30 AM', type: 'venta' },
+    { id: 2, action: 'Producto agregado al inventario', amount: '15 unidades', date: '09:45 AM', type: 'inventario' },
+    { id: 3, action: 'Mesa 5 cerrada', amount: '$850', date: '09:20 AM', type: 'mesa' },
+    { id: 4, action: 'Pago recibido', amount: '$2,300', date: '08:55 AM', type: 'pago' }
+  ];
+
+  const getActivityColor = (type) => {
+    switch(type) {
+      case 'venta': return 'bg-green-500/20 text-green-400 border-green-500/30';
+      case 'inventario': return 'bg-blue-500/20 text-blue-400 border-blue-500/30';
+      case 'mesa': return 'bg-purple-500/20 text-purple-400 border-purple-500/30';
+      case 'pago': return 'bg-orange-500/20 text-orange-400 border-orange-500/30';
+      default: return 'bg-slate-500/20 text-slate-400 border-slate-500/30';
+    }
+  };
 
   return (
-    // Contenedor principal con altura completa de pantalla
     <div className="flex h-screen bg-slate-950">
-      {/* Sidebar - Barra lateral de navegación */}
-      <div className="w-64 bg-slate-900 border-r border-slate-800 p-6 flex flex-col overflow-y-auto">
-        {/* Header del sidebar con logo y nombre del comercio */}
-        <div className="mb-6">
-          {/* Logo del comercio con emoji */}
-          <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl mb-3 flex items-center justify-center text-3xl">
-            💈
-          </div>
-          <h2 className="text-white font-bold text-lg">Nombre del Comercio</h2>
-        </div>
+      {/* Sidebar reutilizable */}
+      <Sidebar />
 
-        {/* Menú de navegación */}
-        <nav className="space-y-6 flex-1">
-          {/* INFORMES */}
-          <div>
-            <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 px-3">Informes</h3>
-            <div className="space-y-1">
-              <button
-                onClick={() => navigate("/dashboard")}
-                className="w-full text-left px-3 py-2 rounded-lg text-slate-300 hover:bg-slate-800/50 transition text-sm"
-              >
-                <BarChart3 className="inline mr-3" size={16} /> Dashboard
-              </button>
-              <button
-                onClick={() => navigate("/resumenes")}
-                className="w-full text-left px-3 py-2 rounded-lg text-slate-300 hover:bg-slate-800/50 transition text-sm"
-              >
-                📄 Resúmenes
-              </button>
-            </div>
+      {/* Main Content */}
+      <div className="flex-1 overflow-auto">
+        <div className="p-8">
+          {/* Encabezado con saludo */}
+          <div className="mb-8">
+            <h1 className="text-3xl font-bold text-white mb-2">
+              Bienvenido de vuelta 👋
+            </h1>
+            <p className="text-slate-400">
+              Aquí está el resumen de tu negocio hoy, {new Date().toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+            </p>
           </div>
 
-          {/* FINANZAS */}
-          <div>
-            <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 px-3">Finanzas</h3>
-            <div className="space-y-1">
-              <button
-                onClick={() => navigate("/ventas")}
-                className="w-full text-left px-3 py-2 rounded-lg text-slate-300 hover:bg-slate-800/50 transition text-sm"
-              >
-                <ShoppingCart className="inline mr-3" size={16} /> Registrar Ventas
-              </button>
-              <button
-                onClick={() => navigate("/contabilidad")}
-                className="w-full text-left px-3 py-2 rounded-lg text-slate-300 hover:bg-slate-800/50 transition text-sm"
-              >
-                💰 Contabilidad
-              </button>
-              <button
-                onClick={() => navigate("/ingresos-egresos")}
-                className="w-full text-left px-3 py-2 rounded-lg text-slate-300 hover:bg-slate-800/50 transition text-sm"
-              >
-                📊 Ingresos y Egresos
-              </button>
-            </div>
-          </div>
-
-          {/* STOCK */}
-          <div>
-            <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 px-3">Stock</h3>
-            <div className="space-y-1">
-              <button
-                onClick={() => navigate("/inventario")}
-                className="w-full text-left px-3 py-2 rounded-lg bg-blue-600/20 text-blue-400 transition text-sm"
-              >
-                <Package className="inline mr-3" size={16} /> Productos
-              </button>
-              <button
-                onClick={() => navigate("/proveedores")}
-                className="w-full text-left px-3 py-2 rounded-lg text-slate-300 hover:bg-slate-800/50 transition text-sm"
-              >
-                🚚 Proveedores
-              </button>
-              <button
-                onClick={() => navigate("/compras")}
-                className="w-full text-left px-3 py-2 rounded-lg text-slate-300 hover:bg-slate-800/50 transition text-sm"
-              >
-                🛒 Compras
-              </button>
-            </div>
-          </div>
-
-          {/* ADMINISTRACIÓN */}
-          <div>
-            <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 px-3">Administración</h3>
-            <div className="space-y-1">
-              <button
-                onClick={() => navigate("/mesas")}
-                className="w-full text-left px-3 py-2 rounded-lg text-slate-300 hover:bg-slate-800/50 transition text-sm"
-              >
-                🪑 Mesas
-              </button>
-              <button
-                onClick={() => navigate("/empleados")}
-                className="w-full text-left px-3 py-2 rounded-lg text-slate-300 hover:bg-slate-800/50 transition text-sm"
-              >
-                👥 Empleados
-              </button>
-              <button
-                onClick={() => navigate("/turnos")}
-                className="w-full text-left px-3 py-2 rounded-lg text-slate-300 hover:bg-slate-800/50 transition text-sm"
-              >
-                🕐 Turnos
-              </button>
-              <button
-                onClick={() => navigate("/metodos-pago")}
-                className="w-full text-left px-3 py-2 rounded-lg text-slate-300 hover:bg-slate-800/50 transition text-sm"
-              >
-                💳 Métodos de Pago
-              </button>
-              <button
-                onClick={() => navigate("/configuracion")}
-                className="w-full text-left px-3 py-2 rounded-lg text-slate-300 hover:bg-slate-800/50 transition text-sm"
-              >
-                <Settings className="inline mr-3" size={16} /> Información Fiscal
-              </button>
-            </div>
-          </div>
-        </nav>
-        
-        {/* Botón de Cerrar Sesión - ubicado al final del sidebar con mt-auto */}
-        <button className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-gray-400 hover:bg-red-900/30 hover:text-red-400 transition-all mt-auto">
-          <LogOut size={20} />
-          <span className="font-medium">Cerrar Sesión</span>
-        </button>
-      </div>
-
-      {/* Main Content - Contenido principal del dashboard */}
-      <div className="flex-1 overflow-auto p-8">
-        {/* Encabezado del dashboard */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-white mb-2">Panel de Administración</h1>
-          <p className="text-slate-400">Gestiona toda tu tienda desde aquí.</p>
-        </div>
-
-        {/* Stats Cards - Tarjetas de estadísticas en grid de 3 columnas */}
-        <div className="grid grid-cols-3 gap-6 mb-8">
-          {stats.map((stat, index) => (
-            <div key={index} className="bg-slate-800/50 border border-slate-700 rounded-2xl p-6">
-              {/* Etiqueta de la estadística */}
-              <h3 className="text-slate-400 mb-2">{stat.label}</h3>
-              {/* Valor de la estadística */}
-              <p className="text-4xl font-bold text-white">{stat.value}</p>
-            </div>
-          ))}
-        </div>
-
-        {/* Recent Movements - Sección de últimos movimientos */}
-        <div className="bg-slate-800/50 border border-slate-700 rounded-2xl p-6">
-          <h2 className="text-xl font-bold text-white mb-6">Últimos movimientos</h2>
-          
-          {/* Lista de movimientos recientes */}
-          <div className="space-y-4">
-            {recentMovements.map(mov => (
-              <div
-                key={mov.id}
-                // Cada movimiento con borde inferior excepto el último
-                className="flex items-center justify-between py-3 border-b border-slate-700 last:border-0"
-              >
-                {/* Descripción de la acción */}
-                <span className="text-slate-300">{mov.action}</span>
-                {/* Fecha del movimiento */}
-                <span className="text-slate-400">{mov.date}</span>
-                {/* Badge de estado con colores condicionales */}
-                <span
-                  className={`px-3 py-1 rounded-full text-sm ${
-                    mov.status === 'Completado'
-                      ? 'bg-green-500/20 text-green-400' // Verde para completado
-                      : 'bg-yellow-500/20 text-yellow-400' // Amarillo para pendiente
-                  }`}
+          {/* Stats Cards con diseño mejorado */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            {stats.map((stat, index) => {
+              const Icon = stat.icon;
+              return (
+                <div 
+                  key={index} 
+                  className="bg-slate-900 border border-slate-800 rounded-2xl p-6 hover:border-slate-700 transition-all group"
                 >
-                  {mov.status}
-                </span>
-              </div>
-            ))}
+                  <div className="flex items-start justify-between mb-4">
+                    <div className={`p-3 rounded-xl bg-gradient-to-br ${stat.color} shadow-lg`}>
+                      <Icon size={24} className="text-white" />
+                    </div>
+                    <span className="text-xs px-2 py-1 bg-green-500/20 text-green-400 rounded-full">
+                      {stat.change}
+                    </span>
+                  </div>
+                  <h3 className="text-slate-400 text-sm mb-1">{stat.label}</h3>
+                  <p className="text-3xl font-bold text-white">{stat.value}</p>
+                </div>
+              );
+            })}
           </div>
-        </div>
 
-        {/* Action Buttons - Botones de acceso rápido a módulos principales */}
-        <div className="mt-6 flex gap-4">
-          {/* Botón para ir a Ventas */}
-          <button
-            onClick={() => navigate("/ventas")}
-            className="px-6 py-3 bg-purple-600 text-white rounded-xl hover:bg-purple-700 transition"
-          >
-            <ShoppingCart className="inline mr-2" size={18} /> Ir a Ventas
-          </button>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Accesos Rápidos - 2 columnas */}
+            <div className="lg:col-span-2">
+              <h2 className="text-xl font-bold text-white mb-4">Accesos Rápidos</h2>
+              <div className="grid grid-cols-2 gap-4">
+                {quickAccess.map((item, index) => {
+                  const Icon = item.icon;
+                  return (
+                    <button
+                      key={index}
+                      onClick={() => navigate(item.path)}
+                      className="bg-slate-900 border border-slate-800 rounded-2xl p-6 hover:border-slate-700 hover:bg-slate-800 transition-all text-left group"
+                    >
+                      <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${item.color} flex items-center justify-center mb-4 group-hover:scale-110 transition-transform shadow-lg`}>
+                        <Icon size={24} className="text-white" />
+                      </div>
+                      <h3 className="text-white font-semibold mb-1">{item.title}</h3>
+                      <p className="text-slate-400 text-sm">{item.description}</p>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
 
-          {/* Botón para ir a Inventario */}
-          <button
-            onClick={() => navigate("/inventario")}
-            className="px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition"
-          >
-            <Package className="inline mr-2" size={18} /> Ir a Inventario
-          </button>
+            {/* Actividad Reciente - 1 columna */}
+            <div>
+              <h2 className="text-xl font-bold text-white mb-4">Actividad Reciente</h2>
+              <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6">
+                <div className="space-y-4">
+                  {recentActivity.map(activity => (
+                    <div
+                      key={activity.id}
+                      className="pb-4 border-b border-slate-800 last:border-0 last:pb-0"
+                    >
+                      <div className="flex items-start justify-between mb-2">
+                        <p className="text-slate-300 text-sm flex-1">{activity.action}</p>
+                        <span className="text-slate-500 text-xs ml-2">{activity.date}</span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className={`text-xs px-2 py-1 rounded-full border ${getActivityColor(activity.type)}`}>
+                          {activity.type}
+                        </span>
+                        <span className="text-white font-semibold">{activity.amount}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <button 
+                  onClick={() => navigate('/resumenes')}
+                  className="w-full mt-4 py-2 text-center text-sm text-slate-400 hover:text-white transition"
+                >
+                  Ver toda la actividad →
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
   );
-};
-
-// Exportación del componente
-export default Dashboard;
+}
