@@ -9,15 +9,15 @@ import React, { useState, useEffect } from "react";
 import { X, Calendar, Clock } from "lucide-react";
 
 // Componente reutilizable
-import Sidebar from "../components/Sidebar";
+import Sidebar from "../../components/Sidebar";
 
 // Imágenes de los servicios
-import corteImg from "../assets/services/corte.png";
-import manicureImg from "../assets/services/manicure.png";
-import facialImg from "../assets/services/facial.png";
-import masajeImg from "../assets/services/masaje.png";
-import depilacionImg from "../assets/services/depilacion.png";
-import pedicureImg from "../assets/services/pedicure.png";
+import corteImg from "../../assets/services/corte.png";
+import manicureImg from "../../assets/services/manicure.png";
+import facialImg from "../../assets/services/facial.png";
+import masajeImg from "../../assets/services/masaje.png";
+import depilacionImg from "../../assets/services/depilacion.png";
+import pedicureImg from "../../assets/services/pedicure.png";
 
 // ==============================
 // COMPONENTE PRINCIPAL

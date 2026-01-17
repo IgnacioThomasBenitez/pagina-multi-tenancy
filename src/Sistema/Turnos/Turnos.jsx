@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Clock, Plus, Edit, X, Trash2, CheckCircle, XCircle, AlertCircle, Eye } from 'lucide-react';
-import Sidebar from '../components/Sidebar';
+import Sidebar from '../../components/Sidebar';
 
 export default function TurnosManager() {
   const [showScheduleModal, setShowScheduleModal] = useState(false);

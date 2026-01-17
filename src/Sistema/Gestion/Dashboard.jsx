@@ -2,7 +2,7 @@
 // Estilo admin oscuro con Tailwind + gráfico
 
 // Importar el Sidebar reutilizable
-import Sidebar from '../components/Sidebar';
+import Sidebar from '../../components/Sidebar';
 
 import {
   BarChart,

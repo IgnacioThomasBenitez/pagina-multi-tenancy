@@ -4,14 +4,8 @@ import React, { useState } from 'react';
 // Importación de iconos desde lucide-react para usar en la interfaz
 import { Eye, EyeOff, Mail, Lock, Globe } from 'lucide-react';
 
-// Importación del hook useNavigate de react-router-dom para navegar entre rutas
-import { useNavigate } from "react-router-dom";
-
 // Componente principal del sistema de autenticación multi-tenant
 const TenantAuthSystem = () => {
-  // Hook para manejar la navegación programática
-  const navigate = useNavigate();
-
   // Estado para controlar qué vista mostrar: 'register' (registro) o 'login' (inicio de sesión)
   const [currentView, setCurrentView] = useState('register');
   
@@ -46,14 +40,20 @@ const TenantAuthSystem = () => {
   const handleRegister = (e) => {
     e.preventDefault(); // Prevenir recarga de página
     console.log('Registro:', registerData); // Log de los datos (temporal)
-    navigate("/administrar"); // Redirigir a la página de administración
+    alert('Registro exitoso! Redirigiendo a administración...');
   };
 
   // Función para manejar el envío del formulario de inicio de sesión
   const handleLogin = (e) => {
     e.preventDefault(); // Prevenir recarga de página
     console.log('Login:', loginData); // Log de los datos (temporal)
-    navigate("/administrar"); // Redirigir a la página de administración
+    alert('Login exitoso! Redirigiendo a administración...');
+  };
+
+  // Función para navegar a diferentes secciones (simulación)
+  const handleNavigate = (section) => {
+    alert(`Navegando a: ${section}`);
+    console.log('Navegando a:', section);
   };
 
   // Función para actualizar el tipo de negocio seleccionado en el registro
@@ -307,6 +307,9 @@ const TenantAuthSystem = () => {
                       type="text"
                       placeholder="minegocio"
                       value={loginData.domain}
+                      onChange={(e) =>
+                        setLoginData({ ...loginData, domain: e.target.value })
+                      }
                       className="w-full bg-slate-700/50 border border-slate-600 rounded-lg py-2.5 pl-10 pr-3 text-white text-sm placeholder-slate-400 focus:outline-none focus:border-blue-500 transition"
                     />
                   </div>
@@ -320,6 +323,47 @@ const TenantAuthSystem = () => {
                   Iniciar sesión
                   <span>→</span>
                 </button>
+
+                {/* Separador con texto */}
+                <div className="relative my-4">
+                  <div className="absolute inset-0 flex items-center">
+                    <div className="w-full border-t border-slate-600"></div>
+                  </div>
+                  <div className="relative flex justify-center text-xs">
+                    <span className="px-2 bg-slate-800/50 text-slate-400">Acceso para personal</span>
+                  </div>
+                </div>
+
+                {/* Grid de botones para personal/encargado */}
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    onClick={() => handleNavigate('configuracionservicio')}
+                    className="py-2.5 bg-slate-700/50 border border-slate-600 text-white rounded-lg font-medium hover:bg-slate-700 hover:border-slate-500 transition flex items-center justify-center gap-2 text-sm"
+                  >
+                    <span>📦</span> Configuracion Servicio
+                  </button>
+                  
+                  <button
+                    onClick={() => handleNavigate('Ventas')}
+                    className="py-2.5 bg-slate-700/50 border border-slate-600 text-white rounded-lg font-medium hover:bg-slate-700 hover:border-slate-500 transition flex items-center justify-center gap-2 text-sm"
+                  >
+                    <span>💰</span> Ventas
+                  </button>
+                  
+                  <button
+                    onClick={() => handleNavigate('Caja')}
+                    className="py-2.5 bg-slate-700/50 border border-slate-600 text-white rounded-lg font-medium hover:bg-slate-700 hover:border-slate-500 transition flex items-center justify-center gap-2 text-sm"
+                  >
+                    <span>🏦</span> Caja
+                  </button>
+                  
+                  <button
+                    onClick={() => handleNavigate('Reportes')}
+                    className="py-2.5 bg-slate-700/50 border border-slate-600 text-white rounded-lg font-medium hover:bg-slate-700 hover:border-slate-500 transition flex items-center justify-center gap-2 text-sm"
+                  >
+                    <span>📊</span> Reportes
+                  </button>
+                </div>
               </div>
             </>
           )}

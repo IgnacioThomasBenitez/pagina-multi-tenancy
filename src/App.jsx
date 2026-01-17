@@ -5,12 +5,13 @@ import { Routes, Route } from "react-router-dom";
 import Home from "./Home";
 
 // Importación de componentes del sistema desde la carpeta Sistema
-import Inventario from "./Sistema/Inventario";
-import Venta from "./Sistema/Venta";
-import Atencion from "./Sistema/Atencion";
+import Inventario from "./Sistema/Gestion/Inventario";
+import Venta from "./Sistema/Gestion/Venta";
+import Atencion from "./Sistema/Turnos/Atencion";
 import Mesas from "./Sistema/Mesas";
-import Dashboard from "./Sistema/dashboard";
-import Turnos from "./Sistema/turnos";
+import Dashboard from "./Sistema/Gestion/dashboard";
+import Turnos from "./Sistema/Turnos/Turnos";
+import ConfiguracionServicio from "./Sistema/Turnos/ConfiguracionServicio";
 
 // Importación del componente Administrar desde la carpeta Cliente
 import Administrar from "./Cliente/Administrar";
@@ -43,6 +44,9 @@ export default function AppRoutes() {
       
       {/* Ruta para el módulo de turnos */}
       <Route path="/turnos" element={<Turnos />} />
+      
+      {/* Ruta para el módulo de configuración de servicios */}
+      <Route path="/configuracionservicio" element={<ConfiguracionServicio />} />
     </Routes>
   );
 }

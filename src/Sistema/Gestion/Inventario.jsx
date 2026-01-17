@@ -5,7 +5,7 @@ import React, { useState } from 'react';
 import { Package, Plus, Search, Edit, Trash2, AlertTriangle, X } from 'lucide-react';
 
 // Importar el Sidebar reutilizable
-import Sidebar from '../components/Sidebar';
+import Sidebar from '../../components/Sidebar';
 
 // ==============================
 // COMPONENTE PRINCIPAL - INVENTARIO
