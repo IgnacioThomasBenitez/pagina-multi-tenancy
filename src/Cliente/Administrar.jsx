@@ -1,7 +1,7 @@
 // Importación de React
 import React from 'react';
 // Importación de iconos
-import { ShoppingCart, Package, TrendingUp, Users, DollarSign, Calendar } from 'lucide-react';
+import { ShoppingCart, Package, TrendingUp, Users, DollarSign, Calendar, Settings, Cog } from 'lucide-react';
 // Hook para navegación
 import { useNavigate } from "react-router-dom";
 // Importar el Sidebar reutilizable
@@ -67,11 +67,25 @@ export default function Inicio() {
       color: 'from-green-500 to-green-600'
     },
     { 
+      title: 'Cocina', 
+      icon: Calendar, 
+      path: '/cocina',
+      description: 'Ver pedidos pendientes',
+      color: 'from-green-500 to-green-600'
+    },
+    { 
       title: 'Reportes', 
       icon: TrendingUp, 
-      path: '/resumenes',
+      path: '/configuracionservicio',
       description: 'Análisis y métricas',
       color: 'from-orange-500 to-orange-600'
+    },
+    { 
+      title: 'Configuración', 
+      icon: Cog, 
+      path: '/configuracionprofecional',
+      description: 'Configuración del sistema',
+      color: 'from-gray-500 to-gray-600'
     }
   ];
 

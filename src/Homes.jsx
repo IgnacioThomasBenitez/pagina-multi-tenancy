@@ -1,18 +1,11 @@
 // Importación de React y el hook useState para manejar el estado del componente
 import React, { useState } from 'react';
 
-// Importar el Sidebar reutilizable
-import Sidebar from './components/Sidebar';
-
-
-
 // Importación de iconos desde lucide-react para usar en la interfaz
 import { Eye, EyeOff, Mail, Lock, Globe } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
 
 // Componente principal del sistema de autenticación multi-tenant
 const TenantAuthSystem = () => {
-  const navigate = useNavigate();
   // Estado para controlar qué vista mostrar: 'register' (registro) o 'login' (inicio de sesión)
   const [currentView, setCurrentView] = useState('register');
   
@@ -67,12 +60,12 @@ const TenantAuthSystem = () => {
   const handleBusinessTypeSelect = (typeId) => {
     setRegisterData({ ...registerData, businessType: typeId });
   };
-  
-  
+
   return (
     // Contenedor principal con gradiente de fondo y centrado
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
+
         {/* Botones de navegación entre Registro e Inicio de sesión */}
         <div className="flex gap-3 mb-6 justify-center">
           {/* Botón de Registro */}
@@ -342,12 +335,33 @@ const TenantAuthSystem = () => {
                 </div>
 
                 {/* Grid de botones para personal/encargado */}
-                <div className="grid grid-cols-1 gap-2">
+                <div className="grid grid-cols-2 gap-2">
                   <button
-                    onClick={() => navigate('/administrar')}
+                    onClick={() => handleNavigate('configuracionservicio')}
                     className="py-2.5 bg-slate-700/50 border border-slate-600 text-white rounded-lg font-medium hover:bg-slate-700 hover:border-slate-500 transition flex items-center justify-center gap-2 text-sm"
                   >
-                    <span>🏠</span> Inicio
+                    <span>📦</span> Configuracion Servicio
+                  </button>
+                  
+                  <button
+                    onClick={() => handleNavigate('Ventas')}
+                    className="py-2.5 bg-slate-700/50 border border-slate-600 text-white rounded-lg font-medium hover:bg-slate-700 hover:border-slate-500 transition flex items-center justify-center gap-2 text-sm"
+                  >
+                    <span>💰</span> Ventas
+                  </button>
+                  
+                  <button
+                    onClick={() => handleNavigate('Caja')}
+                    className="py-2.5 bg-slate-700/50 border border-slate-600 text-white rounded-lg font-medium hover:bg-slate-700 hover:border-slate-500 transition flex items-center justify-center gap-2 text-sm"
+                  >
+                    <span>🏦</span> Caja
+                  </button>
+                  
+                  <button
+                    onClick={() => handleNavigate('Reportes')}
+                    className="py-2.5 bg-slate-700/50 border border-slate-600 text-white rounded-lg font-medium hover:bg-slate-700 hover:border-slate-500 transition flex items-center justify-center gap-2 text-sm"
+                  >
+                    <span>📊</span> Reportes
                   </button>
                 </div>
               </div>

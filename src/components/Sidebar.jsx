@@ -74,7 +74,7 @@ export default function Sidebar() {
       items: [
         { path: '/ventas', label: 'Registrar Ventas', icon: ShoppingCart },
         { path: '/contabilidad', label: 'Contabilidad', icon: DollarSign },
-        { path: '/ingresos-egresos', label: 'Ingresos y Egresos', icon: TrendingUp }
+        { path: '/ingresos-egresos', label: 'Ingresos', icon: TrendingUp }
       ]
     },
 
@@ -83,7 +83,7 @@ export default function Sidebar() {
       id: 'stock',
       title: 'Stock',
       items: [
-        { path: '/inventario', label: 'Productos', icon: Package },
+        { path: '/inventario', label: 'Inventario', icon: Package },
         { path: '/atencion', label: 'Atención', icon: Truck },
         { path: '/compras', label: 'Compras', icon: ShoppingBag }
       ]

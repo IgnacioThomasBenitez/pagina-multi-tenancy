@@ -11,13 +11,15 @@ import Atencion from "./Sistema/Turnos/Atencion";
 import Mesas from "./Sistema/Mesas";
 import Dashboard from "./Sistema/Gestion/dashboard";
 import Turnos from "./Sistema/Turnos/Turnos";
+import Cocina from "./Sistema/Cocina";
 import ConfiguracionServicio from "./Sistema/Turnos/ConfiguracionServicio";
+import ConfiguracionProfecional from "./Sistema/Turnos/ConfiguracionProfecional";
 
 // Importación del componente Administrar desde la carpeta Cliente
 import Administrar from "./Cliente/Administrar";
 
 // Componente principal de rutas que define todas las rutas de la aplicación
-export default function AppRoutes() {
+export default function AppRoutes() { 
   return (
     // Contenedor de todas las rutas de la aplicación
     <Routes>
@@ -45,8 +47,14 @@ export default function AppRoutes() {
       {/* Ruta para el módulo de turnos */}
       <Route path="/turnos" element={<Turnos />} />
       
+      {/* Ruta para el módulo de gestión de Cocina */}
+      <Route path="/cocina" element={<Cocina />} />
+
       {/* Ruta para el módulo de configuración de servicios */}
       <Route path="/configuracionservicio" element={<ConfiguracionServicio />} />
+
+      {/* Ruta para el módulo de configuración */}
+      <Route path="/configuracionprofecional" element={<ConfiguracionProfecional />} />
     </Routes>
   );
 }
