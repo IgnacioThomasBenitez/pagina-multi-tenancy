@@ -35,6 +35,17 @@ export default function Sidebar() {
       reader.readAsDataURL(file);
     }
   };
+   // Cargar logo guardado al iniciar
+  React.useEffect(() => {
+    try {
+      const savedLogo = localStorage.getItem('commerce_logo');
+      if (savedLogo) {
+        setLogoImage(savedLogo);
+      }
+    } catch (error) {
+      console.log('No hay logo guardado');
+    }
+  }, []);
 
   // Función helper para saber si una ruta está activa
   const isActive = (path) => location.pathname === path;

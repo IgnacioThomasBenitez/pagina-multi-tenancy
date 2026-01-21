@@ -4,57 +4,25 @@ import Sidebar from '../components/Sidebar';
 
 const RestaurantOrders = () => {
   const [selectedTable, setSelectedTable] = useState(null);
-  const [orders, setOrders] = useState([
-    {
-      id: 1023,
-      table: 5,
-      status: 'entrante',
-      items: [
-        { name: 'Hamburguesa', quantity: 2 },
-        { name: 'Papas fritas', quantity: 1 }
-      ],
-      notes: 'Sin sal y sin tomate',
-      time: 5,
-      guests: 3
-    },
-    {
-      id: 1024,
-      table: 4,
-      status: 'tardando',
-      items: [
-        { name: 'Pizza Margherita', quantity: 1 },
-        { name: 'Ensalada', quantity: 2 }
-      ],
-      time: 15,
-      guests: 2
-    },
-    {
-      id: 1025,
-      table: 2,
-      status: 'muy-tarde',
-      items: [
-        { name: 'Pasta Carbonara', quantity: 1 },
-        { name: 'Vino tinto', quantity: 1 }
-      ],
-      time: 24,
-      guests: 2
-    },
-    {
-      id: 1026,
-      table: 7,
-      status: 'entrante',
-      items: [
-        { name: 'Sushi variado', quantity: 1 }
-      ],
-      time: 3,
-      guests: 1
-    }
-  ]);
+  const [orders, setOrders] = useState([]);
 
+  // Cargar órdenes desde localStorage
   useEffect(() => {
+    loadOrders();
+    
+    // Actualizar cada 2 segundos para detectar nuevas órdenes
     const interval = setInterval(() => {
-      setOrders(prevOrders => 
-        prevOrders.map(order => {
+      loadOrders();
+    }, 2000);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  // Incrementar tiempo cada minuto
+  useEffect(() => {
+    const timeInterval = setInterval(() => {
+      setOrders(prevOrders => {
+        const updatedOrders = prevOrders.map(order => {
           const newTime = order.time + 1;
           let newStatus = order.status;
           
@@ -62,12 +30,26 @@ const RestaurantOrders = () => {
           else if (newTime > 10) newStatus = 'tardando';
           
           return { ...order, time: newTime, status: newStatus };
-        })
-      );
-    }, 60000);
+        });
+        
+        // Guardar en localStorage
+        if (updatedOrders.length > 0) {
+          localStorage.setItem('kitchenOrders', JSON.stringify(updatedOrders));
+        }
+        
+        return updatedOrders;
+      });
+    }, 60000); // Cada minuto
 
-    return () => clearInterval(interval);
+    return () => clearInterval(timeInterval);
   }, []);
+
+  const loadOrders = () => {
+    const storedOrders = localStorage.getItem('kitchenOrders');
+    if (storedOrders) {
+      setOrders(JSON.parse(storedOrders));
+    }
+  };
 
   const getStatusColor = (status) => {
     switch(status) {
@@ -94,7 +76,9 @@ const RestaurantOrders = () => {
   };
 
   const markAsReady = (orderId) => {
-    setOrders(orders.filter(o => o.id !== orderId));
+    const updatedOrders = orders.filter(o => o.id !== orderId);
+    setOrders(updatedOrders);
+    localStorage.setItem('kitchenOrders', JSON.stringify(updatedOrders));
     setSelectedTable(null);
   };
 
@@ -103,7 +87,7 @@ const RestaurantOrders = () => {
       return `${minutes} min`;
     }
     const hours = Math.floor(minutes / 60);
-    const mins = minutes % 60;S
+    const mins = minutes % 60;
     return `${hours}h ${mins}min`;
   };
 
@@ -114,18 +98,21 @@ const RestaurantOrders = () => {
       <div className="flex-1 p-6 overflow-auto">
         <div className="max-w-7xl mx-auto">
           <div className="flex justify-between items-center mb-8">
-            <h1 className="text-3xl font-bold">Sistema de Órdenes</h1>
+            <div>
+              <h1 className="text-3xl font-bold">Sistema de Órdenes - Cocina</h1>
+              <p className="text-gray-400 mt-1">Las órdenes se actualizan automáticamente desde Mesas</p>
+            </div>
             <div className="grid grid-cols-4 gap-3">
               <div className="bg-gray-800 rounded-lg p-3 text-center border border-gray-700">
-                <p className="text-xs text-gray-400 mb-1">Finalizado</p>
+                <p className="text-xs text-gray-400 mb-1">Entrante</p>
                 <p className="text-2xl font-bold text-green-400">{groupedOrders.entrante.length}</p>
               </div>
               <div className="bg-gray-800 rounded-lg p-3 text-center border border-gray-700">
-                <p className="text-xs text-gray-400 mb-1">Realizando</p>
+                <p className="text-xs text-gray-400 mb-1">Tardando</p>
                 <p className="text-2xl font-bold text-yellow-400">{groupedOrders.tardando.length}</p>
               </div>
               <div className="bg-gray-800 rounded-lg p-3 text-center border border-gray-700">
-                <p className="text-xs text-gray-400 mb-1">Cancelado</p>
+                <p className="text-xs text-gray-400 mb-1">Muy tarde</p>
                 <p className="text-2xl font-bold text-red-400">{groupedOrders['muy-tarde'].length}</p>
               </div>
               <div className="bg-gray-800 rounded-lg p-3 text-center border border-gray-700">
@@ -176,7 +163,7 @@ const RestaurantOrders = () => {
               >
                 <div className="flex justify-between items-start mb-4">
                   <div>
-                    <h3 className="text-xl font-bold">Mesa {order.table}</h3>
+                    <h3 className="text-xl font-bold">{order.table}</h3>
                     <p className="text-xs text-gray-500">Orden #{order.id}</p>
                     <div className="flex items-center gap-2 text-sm text-gray-400 mt-2">
                       <Clock size={14} />
@@ -184,7 +171,7 @@ const RestaurantOrders = () => {
                     </div>
                     <div className="flex items-center gap-2 text-sm text-gray-400 mt-1">
                       <Users size={14} />
-                      <span>{order.guests} {order.guests === 1 ? 'persona' : 'personas'}</span>
+                      <span>{order.guests} {order.guests === 1 ? 'item' : 'items'}</span>
                     </div>
                   </div>
                   <div className={`px-3 py-1 rounded-full text-xs font-semibold ${getStatusColor(order.status)}`}>
@@ -209,21 +196,16 @@ const RestaurantOrders = () => {
                   </div>
                 )}
 
-                <div className="space-y-2">
-                  <button className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2.5 rounded-lg transition-all hover:shadow-lg text-sm font-medium">
-                    Marcar plato listo
-                  </button>
-                  <button 
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      markAsReady(order.id);
-                    }}
-                    className="w-full bg-green-600 hover:bg-green-700 text-white py-2.5 rounded-lg transition-all hover:shadow-lg text-sm font-medium flex items-center justify-center gap-2"
-                  >
-                    <CheckCircle size={16} />
-                    Finalizar pedido
-                  </button>
-                </div>
+                <button 
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    markAsReady(order.id);
+                  }}
+                  className="w-full bg-green-600 hover:bg-green-700 text-white py-2.5 rounded-lg transition-all hover:shadow-lg text-sm font-medium flex items-center justify-center gap-2"
+                >
+                  <CheckCircle size={16} />
+                  Finalizar pedido
+                </button>
               </div>
             ))}
           </div>
@@ -231,7 +213,7 @@ const RestaurantOrders = () => {
           {orders.length === 0 && (
             <div className="text-center py-16 text-gray-400">
               <p className="text-2xl font-semibold">No hay órdenes activas</p>
-              <p className="text-sm mt-2">Las nuevas órdenes aparecerán aquí</p>
+              <p className="text-sm mt-2">Las nuevas órdenes aparecerán aquí cuando se envíen desde Mesas</p>
             </div>
           )}
         </div>
@@ -254,7 +236,7 @@ const RestaurantOrders = () => {
               </button>
               
               <div className="mb-6">
-                <h2 className="text-3xl font-bold mb-1">Mesa {selectedTable.table}</h2>
+                <h2 className="text-3xl font-bold mb-1">{selectedTable.table}</h2>
                 <p className="text-gray-400">Orden #{selectedTable.id}</p>
               </div>
 
@@ -279,7 +261,7 @@ const RestaurantOrders = () => {
                     <Users size={20} className="text-purple-400" />
                   </div>
                   <div>
-                    <p className="text-xs text-gray-500">Comensales</p>
+                    <p className="text-xs text-gray-500">Items</p>
                     <p className="font-bold text-lg">{selectedTable.guests}</p>
                   </div>
                 </div>
@@ -290,7 +272,12 @@ const RestaurantOrders = () => {
                 <div className="bg-gray-700 bg-opacity-30 rounded-xl p-4 space-y-3">
                   {selectedTable.items.map((item, idx) => (
                     <div key={idx} className="flex justify-between items-center py-3 border-b border-gray-600 last:border-0">
-                      <span className="font-medium text-lg">{item.name}</span>
+                      <div className="flex-1">
+                        <span className="font-medium text-lg">{item.name}</span>
+                        {item.notes && (
+                          <p className="text-xs text-yellow-400 mt-1">📝 {item.notes}</p>
+                        )}
+                      </div>
                       <span className="text-gray-400 font-bold bg-gray-700 px-3 py-1 rounded-full">x{item.quantity}</span>
                     </div>
                   ))}
@@ -307,9 +294,6 @@ const RestaurantOrders = () => {
               )}
 
               <div className="space-y-3">
-                <button className="w-full bg-blue-600 hover:bg-blue-700 text-white py-4 rounded-xl transition-all hover:shadow-lg font-medium text-lg">
-                  Marcar plato listo
-                </button>
                 <button 
                   onClick={() => markAsReady(selectedTable.id)}
                   className="w-full bg-green-600 hover:bg-green-700 text-white py-4 rounded-xl transition-all hover:shadow-lg font-medium text-lg flex items-center justify-center gap-2"

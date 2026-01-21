@@ -1,20 +1,9 @@
-import React, { useState } from 'react';
-import { X, Plus, Trash2, Settings, LogOut, ShoppingCart, Package, BarChart3 } from 'lucide-react';
-
-// Importar el Sidebar reutilizable
+import React, { useState, useEffect } from 'react';
+import { X, Plus, Trash2, ShoppingCart } from 'lucide-react';
 import Sidebar from '../components/Sidebar';
 
-
 export default function RestaurantTableManager() {
-  const [tables, setTables] = useState([
-    { id: 1, name: 'Mesa 1', status: 'OCUPADO', orders: [
-      { id: 1, name: 'Hamburguesa completa', category: 'Comida 1', price: 4500, quantity: 1, notes: '' },
-      { id: 2, name: 'Coca Cola', category: 'Bebidas', price: 2000, quantity: 1, notes: '' }
-    ], attendedBy: 'Juan', date: '9/1/2025, 03:34:48' },
-    { id: 2, name: 'Mesa 2', status: 'ESPERA', orders: [], attendedBy: 'María', date: '9/1/2025, 04:15:22' },
-    { id: 3, name: 'Mesa 3', status: 'LIBRE', orders: [], attendedBy: '-', date: '-' }
-  ]);
-  
+  const [tables, setTables] = useState([]);
   const [selectedTable, setSelectedTable] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [showAddTableModal, setShowAddTableModal] = useState(false);
@@ -46,6 +35,31 @@ export default function RestaurantTableManager() {
     ? allMenuItems 
     : allMenuItems.filter(item => item.category === selectedCategory);
 
+  // Cargar mesas desde localStorage al iniciar
+  useEffect(() => {
+    const storedTables = localStorage.getItem('restaurantTables');
+    if (storedTables) {
+      setTables(JSON.parse(storedTables));
+    } else {
+      const initialTables = [
+        { id: 1, name: 'Mesa 1', status: 'OCUPADO', orders: [
+          { id: 1, name: 'Hamburguesa completa', category: 'Hamburguesas', price: 4500, quantity: 1, notes: '' },
+          { id: 2, name: 'Coca Cola', category: 'Bebidas', price: 2000, quantity: 1, notes: '' }
+        ], attendedBy: 'Juan', date: new Date().toLocaleString() },
+        { id: 2, name: 'Mesa 2', status: 'ESPERA', orders: [], attendedBy: 'María', date: new Date().toLocaleString() },
+        { id: 3, name: 'Mesa 3', status: 'LIBRE', orders: [], attendedBy: '-', date: '-' }
+      ];
+      setTables(initialTables);
+      localStorage.setItem('restaurantTables', JSON.stringify(initialTables));
+    }
+  }, []);
+
+  // Guardar mesas en localStorage cada vez que cambien
+  const saveTables = (updatedTables) => {
+    setTables(updatedTables);
+    localStorage.setItem('restaurantTables', JSON.stringify(updatedTables));
+  };
+
   const addNewTable = () => {
     if (newTableName.trim()) {
       const newTable = {
@@ -56,7 +70,7 @@ export default function RestaurantTableManager() {
         attendedBy: newTableAttendant || '-',
         date: '-'
       };
-      setTables([...tables, newTable]);
+      saveTables([...tables, newTable]);
       setNewTableName('');
       setNewTableAttendant('');
       setShowAddTableModal(false);
@@ -102,6 +116,11 @@ export default function RestaurantTableManager() {
   };
 
   const sendOrder = () => {
+    if (selectedTable.orders.length === 0) {
+      alert('⚠️ No hay productos en el pedido');
+      return;
+    }
+
     const currentDate = new Date().toLocaleString();
     const updatedTable = {
       ...selectedTable,
@@ -110,13 +129,39 @@ export default function RestaurantTableManager() {
       attendedBy: selectedTable.attendedBy === '-' ? 'Mesero' : selectedTable.attendedBy
     };
     
-    setTables(tables.map(t => t.id === updatedTable.id ? updatedTable : t));
-    alert('¡Pedido enviado a cocina!');
+    // Actualizar mesas
+    const updatedTables = tables.map(t => t.id === updatedTable.id ? updatedTable : t);
+    saveTables(updatedTables);
+
+    // Crear orden para cocina
+    const kitchenOrder = {
+      id: Date.now(),
+      tableId: updatedTable.id,
+      table: updatedTable.name,
+      status: 'entrante',
+      items: updatedTable.orders.map(order => ({
+        name: order.name,
+        quantity: order.quantity,
+        notes: order.notes
+      })),
+      notes: updatedTable.orders.filter(o => o.notes).map(o => `${o.name}: ${o.notes}`).join(', '),
+      time: 0,
+      guests: updatedTable.orders.reduce((sum, item) => sum + item.quantity, 0),
+      sentAt: currentDate
+    };
+
+    // Agregar a órdenes de cocina
+    const existingOrders = JSON.parse(localStorage.getItem('kitchenOrders') || '[]');
+    const updatedOrders = [...existingOrders, kitchenOrder];
+    localStorage.setItem('kitchenOrders', JSON.stringify(updatedOrders));
+
+    alert('✅ ¡Pedido enviado a cocina!');
     setShowModal(false);
   };
 
   const closeTable = () => {
     if (window.confirm('¿Estás seguro de cerrar esta mesa?')) {
+      const total = calculateTotal();
       const updatedTable = {
         ...selectedTable,
         status: 'LIBRE',
@@ -125,38 +170,44 @@ export default function RestaurantTableManager() {
         date: '-'
       };
       
-      setTables(tables.map(t => t.id === updatedTable.id ? updatedTable : t));
+      const updatedTables = tables.map(t => t.id === updatedTable.id ? updatedTable : t);
+      saveTables(updatedTables);
+
+      // Eliminar órdenes de cocina de esta mesa
+      const existingOrders = JSON.parse(localStorage.getItem('kitchenOrders') || '[]');
+      const filteredOrders = existingOrders.filter(o => o.tableId !== selectedTable.id);
+      localStorage.setItem('kitchenOrders', JSON.stringify(filteredOrders));
+
       setShowModal(false);
-      alert(`Mesa cerrada. Total: $${calculateTotal()}`);
+      alert(`Mesa cerrada. Total: $${total}`);
     }
   };
 
   const deleteTable = (tableId) => {
     if (window.confirm('¿Estás seguro de eliminar esta mesa?')) {
-      setTables(tables.filter(t => t.id !== tableId));
+      const updatedTables = tables.filter(t => t.id !== tableId);
+      saveTables(updatedTables);
     }
   };
 
   const changeTableStatus = (status) => {
     const updatedTable = { ...selectedTable, status };
     setSelectedTable(updatedTable);
-    setTables(tables.map(t => t.id === updatedTable.id ? updatedTable : t));
+    const updatedTables = tables.map(t => t.id === updatedTable.id ? updatedTable : t);
+    saveTables(updatedTables);
   };
 
   return (
     <div className="flex h-screen bg-slate-950">
-      {/* Sidebar - Barra lateral de navegación */}
-            <Sidebar />
-      {/* Main Content */}
+      <Sidebar />
+      
       <div className="flex-1 overflow-auto">
         <div className="p-8">
-          {/* Header */}
           <div className="mb-8">
             <h1 className="text-3xl font-bold text-white mb-2">Mesas</h1>
             <p className="text-slate-400">Gestiona las mesas del restaurante. Total de mesas: {tables.length}</p>
           </div>
 
-          {/* Status badges */}
           <div className="flex gap-3 mb-8 items-center">
             <span className="px-4 py-2 bg-orange-500/20 text-orange-400 rounded-lg font-medium">
               OCUPADO ({tables.filter(t => t.status === 'OCUPADO').length})
@@ -176,7 +227,6 @@ export default function RestaurantTableManager() {
             </button>
           </div>
 
-          {/* Tables Grid */}
           <div className="grid grid-cols-4 gap-4">
             {tables.map(table => (
               <div
@@ -218,7 +268,7 @@ export default function RestaurantTableManager() {
         </div>
       </div>
 
-      {/* Order Modal */}
+      {/* Modal de Pedido */}
       {showModal && selectedTable && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
           <div className="bg-slate-900 border border-slate-800 rounded-xl shadow-2xl w-full max-w-5xl max-h-[90vh] overflow-auto m-4">
@@ -254,7 +304,6 @@ export default function RestaurantTableManager() {
 
             <div className="p-6">
               <div className="grid grid-cols-2 gap-8">
-                {/* Pedidos Section */}
                 <div>
                   <h4 className="text-lg font-semibold text-white mb-4">Pedidos</h4>
                   {selectedTable.orders.length === 0 ? (
@@ -339,7 +388,6 @@ export default function RestaurantTableManager() {
                   </div>
                 </div>
 
-                {/* Agregar productos Section */}
                 <div>
                   <h4 className="text-lg font-semibold text-white mb-4">Agregar productos</h4>
                   <div className="mb-4">
@@ -379,7 +427,7 @@ export default function RestaurantTableManager() {
         </div>
       )}
 
-      {/* Add Table Modal */}
+      {/* Modal Agregar Mesa */}
       {showAddTableModal && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
           <div className="bg-slate-900 border border-slate-800 rounded-xl shadow-2xl w-full max-w-md m-4 p-6">

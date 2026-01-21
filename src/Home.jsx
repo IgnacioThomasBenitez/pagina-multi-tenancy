@@ -1,10 +1,6 @@
 // Importación de React y el hook useState para manejar el estado del componente
 import React, { useState } from 'react';
 
-// Importar el Sidebar reutilizable
-import Sidebar from './components/Sidebar';
-
-
 
 // Importación de iconos desde lucide-react para usar en la interfaz
 import { Eye, EyeOff, Mail, Lock, Globe } from 'lucide-react';
