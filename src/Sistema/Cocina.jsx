@@ -5,10 +5,12 @@ import Sidebar from '../components/Sidebar';
 const RestaurantOrders = () => {
   const [selectedTable, setSelectedTable] = useState(null);
   const [orders, setOrders] = useState([]);
+  const [finalizados, setFinalizados] = useState(0);
 
   // Cargar órdenes desde localStorage
   useEffect(() => {
     loadOrders();
+    loadFinalizados();
     
     // Actualizar cada 2 segundos para detectar nuevas órdenes
     const interval = setInterval(() => {
@@ -51,6 +53,13 @@ const RestaurantOrders = () => {
     }
   };
 
+  const loadFinalizados = () => {
+    const count = localStorage.getItem('finalizadosCount');
+    if (count) {
+      setFinalizados(parseInt(count));
+    }
+  };
+
   const getStatusColor = (status) => {
     switch(status) {
       case 'entrante': return 'bg-green-500';
@@ -76,6 +85,12 @@ const RestaurantOrders = () => {
   };
 
   const markAsReady = (orderId) => {
+    // Incrementar contador de finalizados
+    const newCount = finalizados + 1;
+    setFinalizados(newCount);
+    localStorage.setItem('finalizadosCount', newCount.toString());
+    
+    // Eliminar la orden
     const updatedOrders = orders.filter(o => o.id !== orderId);
     setOrders(updatedOrders);
     localStorage.setItem('kitchenOrders', JSON.stringify(updatedOrders));
@@ -104,19 +119,19 @@ const RestaurantOrders = () => {
             </div>
             <div className="grid grid-cols-4 gap-3">
               <div className="bg-gray-800 rounded-lg p-3 text-center border border-gray-700">
+                <p className="text-xs text-gray-400 mb-1">Finalizados</p>
+                <p className="text-2xl font-bold text-blue-400">{finalizados}</p>
+              </div>
+              <div className="bg-gray-800 rounded-lg p-3 text-center border border-gray-700">
                 <p className="text-xs text-gray-400 mb-1">Entrante</p>
                 <p className="text-2xl font-bold text-green-400">{groupedOrders.entrante.length}</p>
               </div>
               <div className="bg-gray-800 rounded-lg p-3 text-center border border-gray-700">
-                <p className="text-xs text-gray-400 mb-1">Tardando</p>
+                <p className="text-xs text-gray-400 mb-1">Preparando</p>
                 <p className="text-2xl font-bold text-yellow-400">{groupedOrders.tardando.length}</p>
               </div>
               <div className="bg-gray-800 rounded-lg p-3 text-center border border-gray-700">
-                <p className="text-xs text-gray-400 mb-1">Muy tarde</p>
-                <p className="text-2xl font-bold text-red-400">{groupedOrders['muy-tarde'].length}</p>
-              </div>
-              <div className="bg-gray-800 rounded-lg p-3 text-center border border-gray-700">
-                <p className="text-xs text-gray-400 mb-1">Total</p>
+                <p className="text-xs text-gray-400 mb-1">Total Activos</p>
                 <p className="text-2xl font-bold">{orders.length}</p>
               </div>
             </div>
@@ -137,7 +152,7 @@ const RestaurantOrders = () => {
                 <div className="flex items-center justify-between gap-3 p-4 bg-gray-700 bg-opacity-50 rounded-lg hover:bg-opacity-70 transition-all">
                   <div className="flex items-center gap-3">
                     <div className="w-8 h-8 bg-yellow-500 rounded-full shadow-lg shadow-yellow-500/50"></div>
-                    <span className="font-medium">Tardando</span>
+                    <span className="font-medium">Preparando</span>
                   </div>
                   <span className="text-2xl font-bold">{groupedOrders.tardando.length}</span>
                 </div>
@@ -222,7 +237,7 @@ const RestaurantOrders = () => {
       {selectedTable && (
         <>
           <div 
-            className="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm z-40 transition-opacity"
+            className="fixed inset-0 bg-black bg-opacity-60 z-40"
             onClick={() => setSelectedTable(null)}
           />
           

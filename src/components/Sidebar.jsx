@@ -105,6 +105,7 @@ export default function Sidebar() {
       id: 'administracion',
       title: 'Administración',
       items: [
+        { path: '/cocina', label: 'Cocina', icon: UtensilsCrossed },
         { path: '/mesas', label: 'Mesas', icon: UtensilsCrossed },
         { path: '/empleados', label: 'Empleados', icon: Users },
         { path: '/turnos', label: 'Turnos', icon: Clock },
