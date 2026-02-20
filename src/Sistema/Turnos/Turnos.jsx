@@ -1,353 +1,681 @@
-import React, { useState } from 'react';
-import { Clock, Plus, Edit, X, Trash2, CheckCircle, XCircle, AlertCircle, Eye } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import {
+  Clock, Plus, Edit, X, Trash2, CheckCircle,
+  XCircle, AlertCircle, Eye, Search, Filter,
+  Calendar, MapPin, Scissors, Sparkles,
+} from 'lucide-react';
 import Sidebar from '../../components/Sidebar';
 
+/* ─── Paleta unificada ─── */
+const t = {
+  bg: '#0a0d12', surface: '#111720', card: '#161d28',
+  border: '#1e2d3d', borderLight: '#243447',
+  accent: '#10b981', accentMuted: '#064e3b',
+  text: '#e2e8f0', textMuted: '#64748b', textDim: '#334155',
+  danger: '#ef4444', gold: '#f59e0b', info: '#38bdf8', purple: '#8b5cf6',
+};
+
+const STYLES = `
+  @import url('https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  .tm2-root * { font-family: 'Sora', sans-serif; }
+  .mono { font-family: 'JetBrains Mono', monospace !important; }
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: ${t.border}; border-radius: 2px; }
+
+  /* Stat cards */
+  .stat-c { transition: transform 0.2s ease, border-color 0.2s ease; cursor: default; }
+  .stat-c:hover { transform: translateY(-2px); border-color: ${t.borderLight} !important; }
+
+  /* Table rows */
+  .tr-row { transition: background 0.15s ease; }
+  .tr-row:hover { background: ${t.accent}08 !important; }
+  .tr-row:hover .eye-btn { opacity: 1 !important; color: ${t.accent} !important; }
+  .eye-btn { opacity: 0.3; transition: opacity 0.15s, color 0.15s; cursor: pointer; }
+
+  /* Buttons */
+  .btn-p { transition: all 0.15s ease; }
+  .btn-p:hover:not(:disabled) { filter: brightness(1.1); transform: translateY(-1px); }
+  .btn-p:active { transform: translateY(0); }
+  .btn-g { transition: all 0.15s ease; }
+  .btn-g:hover { background: ${t.border} !important; }
+
+  /* Inputs */
+  .tm2-input {
+    width: 100%; background: ${t.surface}; border: 1px solid ${t.border};
+    border-radius: 10px; padding: 11px 14px 11px 38px;
+    color: ${t.text}; font-family: 'Sora', sans-serif; font-size: 13px;
+    outline: none; transition: border-color 0.15s, background 0.15s;
+  }
+  .tm2-input::placeholder { color: ${t.textMuted}; }
+  .tm2-input:focus { border-color: ${t.accent}; background: ${t.accent}08; }
+  .tm2-input::-webkit-calendar-picker-indicator { filter: invert(0.4); }
+
+  .tm2-select {
+    width: 100%; background: ${t.surface}; border: 1px solid ${t.border};
+    border-radius: 10px; padding: 11px 14px 11px 38px;
+    color: ${t.text}; font-family: 'Sora', sans-serif; font-size: 13px;
+    outline: none; cursor: pointer; appearance: none;
+    transition: border-color 0.15s;
+  }
+  .tm2-select:focus { border-color: ${t.accent}; }
+  .tm2-select option { background: ${t.card}; }
+
+  /* Backdrops & modals */
+  .tm2-backdrop { animation: bdIn 0.18s ease; }
+  @keyframes bdIn { from{opacity:0} to{opacity:1} }
+  .tm2-modal { animation: mdIn 0.26s cubic-bezier(0.34,1.56,0.64,1); }
+  @keyframes mdIn { from{opacity:0;transform:scale(0.92) translateY(10px)} to{opacity:1;transform:scale(1) translateY(0)} }
+
+  /* Action buttons in detail */
+  .act-btn {
+    width: 100%; border-radius: 10px; padding: 11px 14px;
+    font-family: 'Sora', sans-serif; font-size: 13px; font-weight: 600;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    cursor: pointer; border: none; transition: all 0.15s ease;
+  }
+  .act-btn:hover { opacity: 0.88; transform: translateY(-1px); }
+  .act-btn:active { transform: translateY(0); }
+
+  /* Day blocks in schedule */
+  .day-block {
+    border-radius: 12px; border: 1px solid ${t.border};
+    padding: 14px 16px; background: ${t.surface};
+    transition: border-color 0.2s;
+  }
+  .day-block:hover { border-color: ${t.borderLight}; }
+
+  /* Dot pulse */
+  .dot-pulse {
+    width: 6px; height: 6px; border-radius: 50%; display: inline-block; flex-shrink: 0;
+    animation: dp 2s infinite;
+  }
+  @keyframes dp { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.3;transform:scale(0.6)} }
+`;
+
+/* ─── Status config ─── */
+const STATUS = {
+  'Pendiente':   { bg: `${t.gold}15`,   color: t.gold,   border: `${t.gold}35`,   Icon: AlertCircle },
+  'En atención': { bg: `${t.info}15`,   color: t.info,   border: `${t.info}35`,   Icon: Clock       },
+  'Finalizado':  { bg: `${t.accent}15`, color: t.accent, border: `${t.accent}35`, Icon: CheckCircle },
+  'Cancelado':   { bg: `${t.danger}15`, color: t.danger, border: `${t.danger}35`, Icon: XCircle     },
+};
+
+function StatusPill({ estado }) {
+  const cfg = STATUS[estado] || {};
+  const Icon = cfg.Icon || AlertCircle;
+  return (
+    <span style={{
+      display: 'inline-flex', alignItems: 'center', gap: 5,
+      background: cfg.bg, color: cfg.color, border: `1px solid ${cfg.border}`,
+      borderRadius: 20, padding: '3px 10px', fontSize: 11, fontWeight: 600, whiteSpace: 'nowrap',
+    }}>
+      <Icon size={11} /> {estado}
+    </span>
+  );
+}
+
+/* ─── Input con icono ─── */
+function IconInput({ icon: Icon, type = 'text', value, onChange, placeholder, name, className = 'tm2-input' }) {
+  return (
+    <div style={{ position: 'relative' }}>
+      <Icon size={14} color={t.textMuted} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
+      <input type={type} name={name} value={value} onChange={onChange} placeholder={placeholder} className={className} />
+    </div>
+  );
+}
+
+function IconSelect({ icon: Icon, value, onChange, children }) {
+  return (
+    <div style={{ position: 'relative' }}>
+      <Icon size={14} color={t.textMuted} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', zIndex: 1 }} />
+      <select value={value} onChange={onChange} className="tm2-select">{children}</select>
+    </div>
+  );
+}
+
+const inputStyle = {
+  width: '100%', background: t.surface, border: `1px solid ${t.border}`,
+  borderRadius: 10, padding: '11px 14px', color: t.text,
+  fontFamily: 'Sora, sans-serif', fontSize: 13, outline: 'none',
+};
+
+/* ─── Label ─── */
+const Label = ({ children }) => (
+  <div style={{ fontSize: 10, fontWeight: 700, color: t.textMuted, textTransform: 'uppercase', letterSpacing: '0.6px', marginBottom: 7 }}>
+    {children}
+  </div>
+);
+
+/* ─── Modal wrapper ─── */
+function Modal({ onClose, children, maxWidth = 440 }) {
+  return (
+    <div
+      className="tm2-backdrop"
+      onClick={(e) => e.target === e.currentTarget && onClose()}
+      style={{
+        position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.72)',
+        backdropFilter: 'blur(7px)', display: 'flex',
+        alignItems: 'center', justifyContent: 'center', zIndex: 50, padding: 16,
+      }}
+    >
+      <div className="tm2-modal" style={{
+        background: t.card, border: `1px solid ${t.border}`,
+        borderRadius: 20, padding: 30, width: '100%', maxWidth,
+        position: 'relative', maxHeight: '90vh', overflowY: 'auto',
+      }}>
+        <button onClick={onClose} style={{
+          position: 'absolute', top: 14, right: 14,
+          width: 28, height: 28, borderRadius: 8,
+          background: t.surface, border: `1px solid ${t.border}`,
+          color: t.textMuted, cursor: 'pointer',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+        }}>
+          <X size={14} />
+        </button>
+        {children}
+      </div>
+    </div>
+  );
+}
+
+/* ─── TurnoForm ─── */
+function TurnoForm({ data, setData }) {
+  const onF = (e) => setData({ ...data, [e.target.name]: e.target.value });
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+      <div>
+        <Label>Cliente</Label>
+        <div style={{ position: 'relative' }}>
+          <Search size={13} color={t.textMuted} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
+          <input name="cliente" value={data.cliente} onChange={onF} placeholder="Nombre del cliente" className="tm2-input" />
+        </div>
+      </div>
+      <div>
+        <Label>Hora</Label>
+        <div style={{ position: 'relative' }}>
+          <Clock size={13} color={t.textMuted} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
+          <input type="time" name="hora" value={data.hora} onChange={onF} className="tm2-input" />
+        </div>
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+        <div>
+          <Label>Tipo</Label>
+          <div style={{ position: 'relative' }}>
+            <Scissors size={13} color={t.textMuted} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
+            <select name="tipo" value={data.tipo} onChange={onF} className="tm2-select">
+              {['Corte', 'Barba', 'Corte + Barba', 'Tintura'].map(o => <option key={o}>{o}</option>)}
+            </select>
+          </div>
+        </div>
+        <div>
+          <Label>Local</Label>
+          <div style={{ position: 'relative' }}>
+            <MapPin size={13} color={t.textMuted} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
+            <select name="local" value={data.local} onChange={onF} className="tm2-select">
+              {['Local', 'Sucursal 1', 'Sucursal 2'].map(o => <option key={o}>{o}</option>)}
+            </select>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ─── COMPONENTE PRINCIPAL ─── */
 export default function TurnosManager() {
-  const [showScheduleModal, setShowScheduleModal] = useState(false);
-  const [showTurnoDetail, setShowTurnoDetail] = useState(false);
-  const [showAddTurnoModal, setShowAddTurnoModal] = useState(false);
-  const [showEditTurnoModal, setShowEditTurnoModal] = useState(false);
-  const [selectedTurno, setSelectedTurno] = useState(null);
-  const [selectedDate, setSelectedDate] = useState('2026-05-20');
-  const [selectedLocation, setSelectedLocation] = useState('Todos');
-  const [selectedStatus, setSelectedStatus] = useState('Todos');
-  const [searchTerm, setSearchTerm] = useState('');
+  const [showScheduleModal,  setShowScheduleModal]  = useState(false);
+  const [showDetail,         setShowDetail]         = useState(false);
+  const [showAddModal,       setShowAddModal]       = useState(false);
+  const [showEditModal,      setShowEditModal]      = useState(false);
+  const [selectedTurno,      setSelectedTurno]      = useState(null);
+  const [selectedDate,       setSelectedDate]       = useState('2026-05-20');
+  const [selectedLocation,   setSelectedLocation]   = useState('Todos');
+  const [selectedStatus,     setSelectedStatus]     = useState('Todos');
+  const [searchTerm,         setSearchTerm]         = useState('');
 
   const [schedules, setSchedules] = useState({
-    Lunes: [{ start: '09:00', end: '13:00' }],
-    Martes: [],
-    Miercoles: [{ start: '15:00', end: '20:00' }],
-    Jueves: [],
-    Viernes: [{ start: '09:00', end: '13:00' }, { start: '16:00', end: '20:00' }],
-    Sabado: [],
-    Domingo: []
+    Lunes:     [{ start: '09:00', end: '13:00' }],
+    Martes:    [],
+    Miércoles: [{ start: '15:00', end: '20:00' }],
+    Jueves:    [],
+    Viernes:   [{ start: '09:00', end: '13:00' }, { start: '16:00', end: '20:00' }],
+    Sábado:    [],
+    Domingo:   [],
   });
 
   const [turnos, setTurnos] = useState([
-    { id: 23, fecha: '20/05/2026', hora: '15:30', tipo: 'Corte', estado: 'Pendiente', cliente: 'Juan Pérez', local: 'Local' },
-    { id: 24, fecha: '20/05/2026', hora: '16:00', tipo: 'Barba', estado: 'En atención', cliente: 'María López', local: 'Local' },
-    { id: 25, fecha: '20/05/2026', hora: '16:30', tipo: 'Corte + Barba', estado: 'Finalizado', cliente: 'Carlos García', local: 'Sucursal 1' },
-    { id: 26, fecha: '20/05/2026', hora: '17:00', tipo: 'Corte', estado: 'Cancelado', cliente: 'Ana Martínez', local: 'Local' }
+    { id: 23, fecha: '20/05/2026', hora: '15:30', tipo: 'Corte',         estado: 'Pendiente',   cliente: 'Juan Pérez',    local: 'Local'      },
+    { id: 24, fecha: '20/05/2026', hora: '16:00', tipo: 'Barba',         estado: 'En atención', cliente: 'María López',   local: 'Local'      },
+    { id: 25, fecha: '20/05/2026', hora: '16:30', tipo: 'Corte + Barba', estado: 'Finalizado',  cliente: 'Carlos García', local: 'Sucursal 1' },
+    { id: 26, fecha: '20/05/2026', hora: '17:00', tipo: 'Corte',         estado: 'Cancelado',   cliente: 'Ana Martínez',  local: 'Local'      },
   ]);
 
-  const [newTurno, setNewTurno] = useState({ fecha: '20/05/2026', hora: '', tipo: 'Corte', cliente: '', local: 'Local' });
+  const EMPTY_TURNO = { fecha: '20/05/2026', hora: '', tipo: 'Corte', cliente: '', local: 'Local' };
+  const [newTurno,  setNewTurno]  = useState(EMPTY_TURNO);
   const [editTurno, setEditTurno] = useState(null);
 
-  const addSchedule = (day) => setSchedules({...schedules, [day]: [...schedules[day], { start: '', end: '' }]});
-  const removeSchedule = (day, idx) => setSchedules({...schedules, [day]: schedules[day].filter((_, i) => i !== idx)});
-  const updateSchedule = (day, idx, field, val) => {
-    const u = [...schedules[day]];
-    u[idx][field] = val;
-    setSchedules({ ...schedules, [day]: u });
+  /* Schedule helpers */
+  const addSchedule    = (d)          => setSchedules({ ...schedules, [d]: [...schedules[d], { start: '', end: '' }] });
+  const removeSchedule = (d, i)       => setSchedules({ ...schedules, [d]: schedules[d].filter((_, idx) => idx !== i) });
+  const updateSchedule = (d, i, f, v) => {
+    const u = [...schedules[d]]; u[i][f] = v;
+    setSchedules({ ...schedules, [d]: u });
   };
 
+  /* Turno helpers */
   const addTurno = () => {
-    if (!newTurno.hora || !newTurno.cliente) return alert('Completa todos los campos');
+    if (!newTurno.hora || !newTurno.cliente) return;
     setTurnos([...turnos, { id: Math.max(...turnos.map(t => t.id)) + 1, ...newTurno, estado: 'Pendiente' }]);
-    setNewTurno({ fecha: '20/05/2026', hora: '', tipo: 'Corte', cliente: '', local: 'Local' });
-    setShowAddTurnoModal(false);
+    setNewTurno(EMPTY_TURNO);
+    setShowAddModal(false);
   };
 
-  const updateTurnoStatus = (id, s) => {
-    setTurnos(turnos.map(t => t.id === id ? { ...t, estado: s } : t));
-    setShowTurnoDetail(false);
+  const updateStatus = (id, estado) => {
+    setTurnos(turnos.map(t => t.id === id ? { ...t, estado } : t));
+    setShowDetail(false);
   };
 
   const deleteTurno = (id) => {
-    if (confirm('¿Eliminar turno?')) {
+    if (window.confirm('¿Eliminar este turno?')) {
       setTurnos(turnos.filter(t => t.id !== id));
-      setShowTurnoDetail(false);
+      setShowDetail(false);
     }
   };
 
-  const saveEditTurno = () => {
-    if (!editTurno.hora || !editTurno.cliente) return alert('Completa todos los campos');
+  const saveEdit = () => {
+    if (!editTurno?.hora || !editTurno?.cliente) return;
     setTurnos(turnos.map(t => t.id === editTurno.id ? editTurno : t));
-    setShowEditTurnoModal(false);
-    setShowTurnoDetail(false);
+    setShowEditModal(false);
+    setShowDetail(false);
   };
 
-  const getStatusColor = (e) => {
-    const c = {
-      'Pendiente': 'bg-orange-500/20 text-orange-400 border border-orange-500/30',
-      'En atención': 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30',
-      'Finalizado': 'bg-green-500/20 text-green-400 border border-green-500/30',
-      'Cancelado': 'bg-red-500/20 text-red-400 border border-red-500/30'
-    };
-    return c[e] || 'bg-slate-500/20 text-slate-400';
-  };
-
-  const getStatusIcon = (e) => {
-    const i = { 'Pendiente': AlertCircle, 'En atención': Clock, 'Finalizado': CheckCircle, 'Cancelado': XCircle };
-    const Icon = i[e];
-    return Icon ? <Icon size={16} /> : null;
-  };
-
-  const filteredTurnos = turnos.filter(t => 
+  const filtered = turnos.filter(t =>
     (selectedLocation === 'Todos' || t.local === selectedLocation) &&
-    (selectedStatus === 'Todos' || t.estado === selectedStatus) &&
+    (selectedStatus   === 'Todos' || t.estado === selectedStatus) &&
     t.cliente.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const stats = {
-    total: turnos.length,
-    atendidos: turnos.filter(t => t.estado === 'Finalizado').length,
-    pendientes: turnos.filter(t => t.estado === 'Pendiente').length,
-    cancelados: turnos.filter(t => t.estado === 'Cancelado').length
-  };
+  const stats = [
+    { label: 'Total',       val: turnos.length,                                      color: t.info,   Icon: Scissors   },
+    { label: 'Finalizados', val: turnos.filter(t => t.estado === 'Finalizado').length, color: t.accent, Icon: CheckCircle },
+    { label: 'Pendientes',  val: turnos.filter(t => t.estado === 'Pendiente').length,  color: t.gold,   Icon: AlertCircle },
+    { label: 'Cancelados',  val: turnos.filter(t => t.estado === 'Cancelado').length,  color: t.danger, Icon: XCircle    },
+  ];
 
   return (
-    <div className="flex min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-black text-white">
-      <Sidebar />
-      <div className="flex-1 p-8 overflow-auto">
-      <div className="mb-8">
-        <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">Gestión de Turnos</h1>
-        <p className="text-slate-400">Administración completa de turnos y horarios</p>
-      </div>
+    <>
+      <style>{STYLES}</style>
 
-      <div className="flex gap-4 mb-6">
-        <button onClick={() => setShowAddTurnoModal(true)} className="px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 rounded-lg transition flex items-center gap-2 font-semibold shadow-lg">
-          <Plus size={20} /> Nuevo Turno
-        </button>
-        <button onClick={() => setShowScheduleModal(true)} className="px-6 py-3 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg transition flex items-center gap-2 font-semibold">
-          <Clock size={20} /> Configurar Horarios
-        </button>
-      </div>
+      <div className="tm2-root" style={{ display: 'flex', height: '100vh', background: t.bg }}>
+        <Sidebar />
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-        {[
-          { label: 'Turnos del día', val: stats.total, color: 'from-blue-400 to-cyan-400', bg: 'from-slate-800 to-slate-900' },
-          { label: 'Atendidos', val: stats.atendidos, color: 'text-green-400', bg: 'from-green-900/30 to-green-950/30', icon: CheckCircle },
-          { label: 'Pendientes', val: stats.pendientes, color: 'text-yellow-400', bg: 'from-yellow-900/30 to-yellow-950/30', icon: AlertCircle },
-          { label: 'Cancelados', val: stats.cancelados, color: 'text-red-400', bg: 'from-red-900/30 to-red-950/30', icon: XCircle }
-        ].map((s, i) => (
-          <div key={i} className={`bg-gradient-to-br ${s.bg} border border-slate-700 rounded-xl p-6 shadow-xl`}>
-            <div className="flex items-center gap-2 text-slate-400 text-sm mb-2">
-              {s.icon && <s.icon size={16} />}
-              <p>{s.label}</p>
+        <div style={{ flex: 1, overflowY: 'auto', padding: '28px 32px' }}>
+
+          {/* ─── Header ─── */}
+          <div style={{
+            background: t.surface, border: `1px solid ${t.border}`,
+            borderRadius: 18, padding: '22px 28px', marginBottom: 22,
+            display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+          }}>
+            <div>
+              <div style={{
+                display: 'inline-flex', alignItems: 'center', gap: 5,
+                background: `${t.accent}15`, border: `1px solid ${t.accent}30`,
+                borderRadius: 20, padding: '3px 11px',
+                fontSize: 10, color: t.accent, fontWeight: 700,
+                letterSpacing: '0.8px', textTransform: 'uppercase', marginBottom: 8,
+              }}>
+                <Sparkles size={10} /> Administración
+              </div>
+              <h1 style={{ fontSize: 26, fontWeight: 800, color: t.text, letterSpacing: '-0.5px', marginBottom: 3 }}>
+                Gestión de Turnos
+              </h1>
+              <p style={{ fontSize: 13, color: t.textMuted }}>Administración completa de turnos y horarios</p>
             </div>
-            <p className={`text-4xl font-bold ${s.color.includes('gradient') ? 'bg-gradient-to-r ' + s.color + ' bg-clip-text text-transparent' : s.color}`}>{s.val}</p>
-          </div>
-        ))}
-      </div>
 
-      <div className="bg-slate-800/50 backdrop-blur-sm border border-slate-700 rounded-xl p-4 mb-6 shadow-xl">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <input type="date" value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)} className="bg-slate-900 border border-slate-600 rounded-lg px-4 py-2 text-white focus:border-purple-500 focus:outline-none" />
-          <select value={selectedLocation} onChange={(e) => setSelectedLocation(e.target.value)} className="bg-slate-900 border border-slate-600 rounded-lg px-4 py-2 text-white focus:border-purple-500 focus:outline-none">
-            {['Todos', 'Local', 'Sucursal 1', 'Sucursal 2'].map(l => <option key={l}>{l}</option>)}
-          </select>
-          <select value={selectedStatus} onChange={(e) => setSelectedStatus(e.target.value)} className="bg-slate-900 border border-slate-600 rounded-lg px-4 py-2 text-white focus:border-purple-500 focus:outline-none">
-            {['Todos', 'Pendiente', 'En atención', 'Finalizado', 'Cancelado'].map(s => <option key={s}>{s}</option>)}
-          </select>
-          <input type="text" placeholder="Buscar cliente..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="bg-slate-900 border border-slate-600 rounded-lg px-4 py-2 text-white placeholder-slate-500 focus:border-purple-500 focus:outline-none" />
-        </div>
-      </div>
-
-      <div className="bg-slate-800/50 backdrop-blur-sm border border-slate-700 rounded-xl overflow-hidden shadow-xl">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-slate-900/80">
-              <tr className="text-left text-slate-400 text-sm">
-                {['N°', 'Cliente', 'Fecha', 'Hora', 'Tipo', 'Local', 'Estado', 'Acciones'].map(h => <th key={h} className="p-4 font-semibold">{h}</th>)}
-              </tr>
-            </thead>
-            <tbody>
-              {filteredTurnos.length === 0 ? (
-                <tr><td colSpan="8" className="p-8 text-center text-slate-500">No se encontraron turnos</td></tr>
-              ) : (
-                filteredTurnos.map(t => (
-                  <tr key={t.id} className="border-t border-slate-700 hover:bg-slate-800/50 transition">
-                    <td className="p-4 font-semibold text-purple-400">#{t.id}</td>
-                    <td className="p-4">{t.cliente}</td>
-                    <td className="p-4">{t.fecha}</td>
-                    <td className="p-4 font-medium">{t.hora}</td>
-                    <td className="p-4">{t.tipo}</td>
-                    <td className="p-4 text-sm text-slate-400">{t.local}</td>
-                    <td className="p-4">
-                      <span className={`px-3 py-1 rounded-full text-xs font-medium flex items-center gap-1 w-fit ${getStatusColor(t.estado)}`}>
-                        {getStatusIcon(t.estado)} {t.estado}
-                      </span>
-                    </td>
-                    <td className="p-4">
-                      <button onClick={() => { setSelectedTurno(t); setShowTurnoDetail(true); }} className="text-blue-400 hover:text-blue-300 transition p-2 hover:bg-blue-500/10 rounded-lg">
-                        <Eye size={18} />
-                      </button>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      {showAddTurnoModal && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-md p-6 shadow-2xl">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-bold">Nuevo Turno</h2>
-              <button onClick={() => setShowAddTurnoModal(false)} className="text-slate-400 hover:text-white"><X size={24} /></button>
-            </div>
-            <div className="space-y-4">
-              {[
-                { label: 'Cliente', type: 'text', val: newTurno.cliente, key: 'cliente', placeholder: 'Nombre' },
-                { label: 'Hora', type: 'time', val: newTurno.hora, key: 'hora' },
-                { label: 'Tipo', type: 'select', val: newTurno.tipo, key: 'tipo', opts: ['Corte', 'Barba', 'Corte + Barba', 'Tintura'] },
-                { label: 'Local', type: 'select', val: newTurno.local, key: 'local', opts: ['Local', 'Sucursal 1', 'Sucursal 2'] }
-              ].map(f => (
-                <div key={f.key}>
-                  <label className="block text-sm text-slate-400 mb-2">{f.label}</label>
-                  {f.type === 'select' ? (
-                    <select value={f.val} onChange={(e) => setNewTurno({...newTurno, [f.key]: e.target.value})} className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-white focus:border-purple-500 focus:outline-none">
-                      {f.opts.map(o => <option key={o}>{o}</option>)}
-                    </select>
-                  ) : (
-                    <input type={f.type} value={f.val} onChange={(e) => setNewTurno({...newTurno, [f.key]: e.target.value})} placeholder={f.placeholder} className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-white focus:border-purple-500 focus:outline-none" />
-                  )}
-                </div>
-              ))}
-            </div>
-            <div className="flex gap-3 mt-6">
-              <button onClick={() => setShowAddTurnoModal(false)} className="flex-1 px-4 py-3 rounded-lg bg-slate-800 hover:bg-slate-700 transition font-semibold">Cancelar</button>
-              <button onClick={addTurno} className="flex-1 px-4 py-3 rounded-lg bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 transition font-semibold">Guardar</button>
+            <div style={{ display: 'flex', gap: 10 }}>
+              <button
+                className="btn-g"
+                onClick={() => setShowScheduleModal(true)}
+                style={{
+                  padding: '10px 18px', background: t.card, border: `1px solid ${t.border}`,
+                  borderRadius: 10, color: t.textMuted, cursor: 'pointer',
+                  fontFamily: 'Sora, sans-serif', fontSize: 13, fontWeight: 600,
+                  display: 'flex', alignItems: 'center', gap: 7,
+                }}
+              >
+                <Clock size={15} /> Horarios
+              </button>
+              <button
+                className="btn-p"
+                onClick={() => setShowAddModal(true)}
+                style={{
+                  padding: '10px 18px', background: t.accent, border: 'none',
+                  borderRadius: 10, color: '#fff', cursor: 'pointer',
+                  fontFamily: 'Sora, sans-serif', fontSize: 13, fontWeight: 700,
+                  display: 'flex', alignItems: 'center', gap: 7,
+                }}
+              >
+                <Plus size={15} /> Nuevo Turno
+              </button>
             </div>
           </div>
-        </div>
-      )}
 
-      {showScheduleModal && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-2xl p-6 shadow-2xl max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-bold">Configuración de horarios</h2>
-              <button onClick={() => setShowScheduleModal(false)} className="text-slate-400 hover:text-white"><X size={24} /></button>
-            </div>
-            <div className="space-y-6">
-              {Object.keys(schedules).map(day => (
-                <div key={day} className="border-b border-slate-700 pb-4 last:border-0">
-                  <div className="flex items-center justify-between mb-3">
-                    <h3 className="font-semibold text-lg">{day}</h3>
-                    <button onClick={() => addSchedule(day)} className="text-purple-400 hover:text-purple-300 text-sm flex items-center gap-1 font-semibold">
-                      <Plus size={16} /> Agregar
-                    </button>
-                  </div>
-                  {schedules[day].length === 0 ? (
-                    <p className="text-slate-500 text-sm italic">Sin atención</p>
-                  ) : (
-                    <div className="space-y-2">
-                      {schedules[day].map((s, idx) => (
-                        <div key={idx} className="flex items-center gap-3">
-                          <input type="time" value={s.start} onChange={(e) => updateSchedule(day, idx, 'start', e.target.value)} className="bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white focus:border-purple-500 focus:outline-none" />
-                          <span className="text-slate-400">-</span>
-                          <input type="time" value={s.end} onChange={(e) => updateSchedule(day, idx, 'end', e.target.value)} className="bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white focus:border-purple-500 focus:outline-none" />
-                          <button onClick={() => removeSchedule(day, idx)} className="text-red-400 hover:text-red-300 transition p-2 hover:bg-red-500/10 rounded-lg"><Trash2 size={18} /></button>
-                        </div>
-                      ))}
-                    </div>
-                  )}
+          {/* ─── Stats ─── */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14, marginBottom: 20 }}>
+            {stats.map(({ label, val, color, Icon }) => (
+              <div key={label} className="stat-c" style={{
+                background: t.card, border: `1px solid ${t.border}`,
+                borderRadius: 14, padding: '18px 20px',
+              }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: t.textMuted, textTransform: 'uppercase', letterSpacing: '0.5px' }}>{label}</div>
+                  <Icon size={14} color={color} style={{ opacity: 0.7 }} />
                 </div>
-              ))}
+                <div style={{ display: 'flex', alignItems: 'flex-end', gap: 8 }}>
+                  <div className="mono" style={{ fontSize: 28, fontWeight: 700, color, lineHeight: 1 }}>{val}</div>
+                  <span className="dot-pulse" style={{ background: color, marginBottom: 4 }} />
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* ─── Filtros ─── */}
+          <div style={{
+            background: t.card, border: `1px solid ${t.border}`,
+            borderRadius: 14, padding: '16px 20px', marginBottom: 18,
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
+              <Filter size={13} color={t.accent} />
+              <span style={{ fontSize: 10, fontWeight: 700, color: t.textMuted, textTransform: 'uppercase', letterSpacing: '0.6px' }}>Filtros</span>
             </div>
-            <div className="flex justify-end mt-6">
-              <button onClick={() => setShowScheduleModal(false)} className="px-6 py-3 rounded-lg bg-slate-800 hover:bg-slate-700 transition font-semibold">Cerrar</button>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10 }}>
+              <IconInput icon={Calendar} type="date" value={selectedDate} onChange={e => setSelectedDate(e.target.value)} />
+              <IconSelect icon={MapPin} value={selectedLocation} onChange={e => setSelectedLocation(e.target.value)}>
+                {['Todos', 'Local', 'Sucursal 1', 'Sucursal 2'].map(l => <option key={l}>{l}</option>)}
+              </IconSelect>
+              <IconSelect icon={AlertCircle} value={selectedStatus} onChange={e => setSelectedStatus(e.target.value)}>
+                {['Todos', 'Pendiente', 'En atención', 'Finalizado', 'Cancelado'].map(s => <option key={s}>{s}</option>)}
+              </IconSelect>
+              <IconInput icon={Search} value={searchTerm} onChange={e => setSearchTerm(e.target.value)} placeholder="Buscar cliente..." />
             </div>
           </div>
-        </div>
-      )}
 
-      {showTurnoDetail && selectedTurno && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-md p-6 shadow-2xl">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-bold">Detalle del Turno</h2>
-              <button onClick={() => setShowTurnoDetail(false)} className="text-slate-400 hover:text-white"><X size={24} /></button>
-            </div>
-            <div className="space-y-3 mb-6 bg-slate-800/50 rounded-lg p-4 text-sm">
-              {[
-                ['N°', `#${selectedTurno.id}`, 'text-purple-400'],
-                ['Cliente', selectedTurno.cliente],
-                ['Fecha', selectedTurno.fecha],
-                ['Hora', selectedTurno.hora],
-                ['Tipo', selectedTurno.tipo],
-                ['Local', selectedTurno.local]
-              ].map(([k, v, c]) => (
-                <div key={k} className="flex justify-between">
-                  <span className="text-slate-400">{k}:</span>
-                  <span className={`font-medium ${c || 'text-white'}`}>{v}</span>
-                </div>
-              ))}
-              <div className="flex justify-between items-center pt-2 border-t border-slate-700">
-                <span className="text-slate-400">Estado:</span>
-                <span className={`px-3 py-1 rounded-full text-xs font-medium inline-flex items-center gap-2 ${getStatusColor(selectedTurno.estado)}`}>
-                  {getStatusIcon(selectedTurno.estado)} {selectedTurno.estado}
+          {/* ─── Tabla ─── */}
+          <div style={{ background: t.card, border: `1px solid ${t.border}`, borderRadius: 16, overflow: 'hidden' }}>
+            {/* Table header */}
+            <div style={{
+              padding: '14px 20px', borderBottom: `1px solid ${t.border}`,
+              display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <Scissors size={14} color={t.accent} />
+                <span style={{ fontSize: 11, fontWeight: 700, color: t.textMuted, textTransform: 'uppercase', letterSpacing: '0.6px' }}>
+                  Turnos del día
                 </span>
               </div>
+              <span style={{ fontSize: 11, color: t.textDim }}>
+                {filtered.length} resultado{filtered.length !== 1 ? 's' : ''}
+              </span>
             </div>
-            <div className="space-y-3">
+
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <thead>
+                  <tr>
+                    {['N°', 'Cliente', 'Fecha', 'Hora', 'Tipo', 'Local', 'Estado', ''].map(h => (
+                      <th key={h} style={{
+                        padding: '10px 16px', textAlign: 'left',
+                        fontSize: 10, fontWeight: 700, color: t.textDim,
+                        textTransform: 'uppercase', letterSpacing: '0.6px',
+                        borderBottom: `1px solid ${t.border}`,
+                      }}>{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {filtered.length === 0 ? (
+                    <tr>
+                      <td colSpan={8}>
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '48px 20px', gap: 10 }}>
+                          <div style={{
+                            width: 52, height: 52, borderRadius: 14, background: t.surface,
+                            border: `1px solid ${t.border}`, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          }}>
+                            <Scissors size={22} color={t.textDim} />
+                          </div>
+                          <span style={{ color: t.textMuted, fontSize: 13 }}>Sin turnos para mostrar</span>
+                        </div>
+                      </td>
+                    </tr>
+                  ) : filtered.map((trn, idx) => (
+                    <tr
+                      key={trn.id}
+                      className="tr-row"
+                      style={{ borderTop: `1px solid ${t.border}`, background: idx % 2 === 0 ? 'transparent' : `${t.surface}60` }}
+                    >
+                      <td style={{ padding: '13px 16px' }}>
+                        <span className="mono" style={{ fontSize: 12, fontWeight: 600, color: t.accent }}>#{trn.id}</span>
+                      </td>
+                      <td style={{ padding: '13px 16px', fontSize: 13, fontWeight: 600, color: t.text }}>{trn.cliente}</td>
+                      <td style={{ padding: '13px 16px', fontSize: 12, color: t.textMuted }}>{trn.fecha}</td>
+                      <td style={{ padding: '13px 16px' }}>
+                        <span style={{ fontSize: 12, color: t.text, display: 'flex', alignItems: 'center', gap: 5, fontWeight: 500 }}>
+                          <Clock size={11} color={t.textMuted} /> {trn.hora}
+                        </span>
+                      </td>
+                      <td style={{ padding: '13px 16px', fontSize: 12, color: t.textMuted }}>{trn.tipo}</td>
+                      <td style={{ padding: '13px 16px' }}>
+                        <span style={{ fontSize: 11, color: t.textMuted, display: 'flex', alignItems: 'center', gap: 4 }}>
+                          <MapPin size={10} /> {trn.local}
+                        </span>
+                      </td>
+                      <td style={{ padding: '13px 16px' }}><StatusPill estado={trn.estado} /></td>
+                      <td style={{ padding: '13px 16px' }}>
+                        <button
+                          className="eye-btn btn-g"
+                          onClick={() => { setSelectedTurno(trn); setShowDetail(true); }}
+                          style={{
+                            padding: '6px 8px', borderRadius: 8, background: 'none', border: 'none',
+                            color: t.textMuted, cursor: 'pointer', display: 'flex',
+                          }}
+                        >
+                          <Eye size={15} />
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        {/* ─── MODAL: Nuevo Turno ─── */}
+        {showAddModal && (
+          <Modal onClose={() => setShowAddModal(false)}>
+            <div style={{ marginBottom: 20 }}>
+              <div style={{ fontSize: 10, color: t.accent, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1px', marginBottom: 6 }}>Turnos</div>
+              <h2 style={{ fontSize: 20, fontWeight: 800, color: t.text }}>Nuevo Turno</h2>
+            </div>
+            <TurnoForm data={newTurno} setData={setNewTurno} />
+            <div style={{ display: 'flex', gap: 10, marginTop: 20 }}>
+              <button className="btn-g" onClick={() => setShowAddModal(false)} style={{
+                flex: 1, padding: '11px', background: t.surface, border: `1px solid ${t.border}`,
+                borderRadius: 10, color: t.textMuted, cursor: 'pointer',
+                fontFamily: 'Sora, sans-serif', fontSize: 13, fontWeight: 600,
+              }}>Cancelar</button>
+              <button className="btn-p" onClick={addTurno} style={{
+                flex: 2, padding: '11px', background: t.accent, border: 'none',
+                borderRadius: 10, color: '#fff', cursor: 'pointer',
+                fontFamily: 'Sora, sans-serif', fontSize: 13, fontWeight: 700,
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7,
+              }}>
+                <CheckCircle size={14} /> Guardar Turno
+              </button>
+            </div>
+          </Modal>
+        )}
+
+        {/* ─── MODAL: Horarios ─── */}
+        {showScheduleModal && (
+          <Modal onClose={() => setShowScheduleModal(false)} maxWidth={600}>
+            <div style={{ marginBottom: 20 }}>
+              <div style={{ fontSize: 10, color: t.accent, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1px', marginBottom: 6 }}>Configuración</div>
+              <h2 style={{ fontSize: 20, fontWeight: 800, color: t.text }}>Horarios de atención</h2>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {Object.keys(schedules).map(day => (
+                <div key={day} className="day-block">
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: schedules[day].length ? 10 : 0 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <span style={{ fontSize: 13, fontWeight: 600, color: t.text }}>{day}</span>
+                      {schedules[day].length === 0 && (
+                        <span style={{ fontSize: 11, color: t.textDim, fontStyle: 'italic' }}>Sin atención</span>
+                      )}
+                    </div>
+                    <button
+                      onClick={() => addSchedule(day)}
+                      style={{
+                        background: 'none', border: 'none', cursor: 'pointer',
+                        color: t.accent, fontSize: 12, fontWeight: 700,
+                        display: 'flex', alignItems: 'center', gap: 4,
+                        fontFamily: 'Sora, sans-serif',
+                      }}
+                    >
+                      <Plus size={13} /> Agregar
+                    </button>
+                  </div>
+
+                  {schedules[day].map((s, idx) => (
+                    <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8 }}>
+                      <input type="time" value={s.start} onChange={e => updateSchedule(day, idx, 'start', e.target.value)}
+                        style={{ ...inputStyle, flex: 1, padding: '9px 12px' }} />
+                      <span style={{ fontSize: 11, color: t.textMuted, flexShrink: 0 }}>hasta</span>
+                      <input type="time" value={s.end} onChange={e => updateSchedule(day, idx, 'end', e.target.value)}
+                        style={{ ...inputStyle, flex: 1, padding: '9px 12px' }} />
+                      <button onClick={() => removeSchedule(day, idx)} style={{
+                        padding: '7px', borderRadius: 8, background: `${t.danger}12`,
+                        border: `1px solid ${t.danger}25`, color: t.danger, cursor: 'pointer', flexShrink: 0,
+                      }}>
+                        <Trash2 size={13} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              ))}
+            </div>
+
+            <button className="btn-p" onClick={() => setShowScheduleModal(false)} style={{
+              width: '100%', marginTop: 18, padding: '12px', background: t.accent, border: 'none',
+              borderRadius: 10, color: '#fff', cursor: 'pointer',
+              fontFamily: 'Sora, sans-serif', fontSize: 13, fontWeight: 700,
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7,
+            }}>
+              <CheckCircle size={14} /> Guardar Horarios
+            </button>
+          </Modal>
+        )}
+
+        {/* ─── MODAL: Detalle ─── */}
+        {showDetail && selectedTurno && (
+          <Modal onClose={() => setShowDetail(false)}>
+            <div style={{ marginBottom: 18 }}>
+              <div style={{ fontSize: 10, color: t.accent, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1px', marginBottom: 6 }}>
+                Turno #{selectedTurno.id}
+              </div>
+              <h2 style={{ fontSize: 20, fontWeight: 800, color: t.text }}>Detalle del Turno</h2>
+            </div>
+
+            {/* Info */}
+            <div style={{
+              background: t.surface, border: `1px solid ${t.border}`,
+              borderRadius: 12, padding: '14px 16px', marginBottom: 18,
+            }}>
+              {[
+                ['Cliente', selectedTurno.cliente, t.text],
+                ['Fecha',   selectedTurno.fecha,   t.textMuted],
+                ['Hora',    selectedTurno.hora,     t.textMuted],
+                ['Tipo',    selectedTurno.tipo,     t.textMuted],
+                ['Local',   selectedTurno.local,    t.textMuted],
+              ].map(([k, v, color]) => (
+                <div key={k} style={{
+                  display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                  padding: '8px 0', borderBottom: `1px solid ${t.border}`,
+                }}>
+                  <span style={{ fontSize: 12, color: t.textMuted }}>{k}</span>
+                  <span style={{ fontSize: 13, fontWeight: 600, color }}>{v}</span>
+                </div>
+              ))}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: 8 }}>
+                <span style={{ fontSize: 12, color: t.textMuted }}>Estado</span>
+                <StatusPill estado={selectedTurno.estado} />
+              </div>
+            </div>
+
+            {/* Acciones */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               {selectedTurno.estado === 'Pendiente' && (
-                <button onClick={() => updateTurnoStatus(selectedTurno.id, 'En atención')} className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white py-3 rounded-lg transition font-semibold flex items-center justify-center gap-2">
-                  <CheckCircle size={18} /> Iniciar atención
+                <button className="act-btn" onClick={() => updateStatus(selectedTurno.id, 'En atención')}
+                  style={{ background: `${t.info}20`, border: `1px solid ${t.info}35`, color: t.info }}>
+                  <Clock size={14} /> Iniciar atención
                 </button>
               )}
               {selectedTurno.estado === 'En atención' && (
-                <button onClick={() => updateTurnoStatus(selectedTurno.id, 'Finalizado')} className="w-full bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white py-3 rounded-lg transition font-semibold flex items-center justify-center gap-2">
-                  <CheckCircle size={18} /> Finalizar atención
+                <button className="act-btn" onClick={() => updateStatus(selectedTurno.id, 'Finalizado')}
+                  style={{ background: `${t.accent}20`, border: `1px solid ${t.accent}35`, color: t.accent }}>
+                  <CheckCircle size={14} /> Finalizar atención
                 </button>
               )}
-              {(selectedTurno.estado === 'Pendiente' || selectedTurno.estado === 'En atención') && (
+              {['Pendiente', 'En atención'].includes(selectedTurno.estado) && (
                 <>
-                  <button onClick={() => { setEditTurno({...selectedTurno}); setShowEditTurnoModal(true); }} className="w-full bg-slate-700 hover:bg-slate-600 text-white py-3 rounded-lg transition font-semibold flex items-center justify-center gap-2">
-                    <Edit size={18} /> Editar
+                  <button className="act-btn" onClick={() => { setEditTurno({ ...selectedTurno }); setShowEditModal(true); }}
+                    style={{ background: t.surface, border: `1px solid ${t.border}`, color: t.textMuted }}>
+                    <Edit size={14} /> Editar turno
                   </button>
-                  <button onClick={() => updateTurnoStatus(selectedTurno.id, 'Cancelado')} className="w-full bg-red-600/20 hover:bg-red-600/30 text-red-400 border border-red-500/30 py-3 rounded-lg transition font-semibold flex items-center justify-center gap-2">
-                    <X size={18} /> Cancelar turno
+                  <button className="act-btn" onClick={() => updateStatus(selectedTurno.id, 'Cancelado')}
+                    style={{ background: `${t.gold}12`, border: `1px solid ${t.gold}30`, color: t.gold }}>
+                    <X size={14} /> Cancelar turno
                   </button>
                 </>
               )}
-              <button onClick={() => deleteTurno(selectedTurno.id)} className="w-full bg-red-900/20 hover:bg-red-900/30 text-red-400 border border-red-700/30 py-3 rounded-lg transition font-semibold flex items-center justify-center gap-2">
-                <Trash2 size={18} /> Eliminar
+              <button className="act-btn" onClick={() => deleteTurno(selectedTurno.id)}
+                style={{ background: `${t.danger}12`, border: `1px solid ${t.danger}25`, color: t.danger }}>
+                <Trash2 size={14} /> Eliminar turno
               </button>
-              <button onClick={() => setShowTurnoDetail(false)} className="w-full bg-slate-800 hover:bg-slate-700 text-white py-3 rounded-lg transition font-semibold">Cerrar</button>
             </div>
-          </div>
-        </div>
-      )}
+          </Modal>
+        )}
 
-      {showEditTurnoModal && editTurno && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-md p-6 shadow-2xl">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-bold">Editar Turno</h2>
-              <button onClick={() => setShowEditTurnoModal(false)} className="text-slate-400 hover:text-white"><X size={24} /></button>
+        {/* ─── MODAL: Editar ─── */}
+        {showEditModal && editTurno && (
+          <Modal onClose={() => setShowEditModal(false)}>
+            <div style={{ marginBottom: 20 }}>
+              <div style={{ fontSize: 10, color: t.purple, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1px', marginBottom: 6 }}>Edición</div>
+              <h2 style={{ fontSize: 20, fontWeight: 800, color: t.text }}>Editar Turno</h2>
             </div>
-            <div className="space-y-4">
-              {[
-                { label: 'Cliente', type: 'text', val: editTurno.cliente, key: 'cliente' },
-                { label: 'Hora', type: 'time', val: editTurno.hora, key: 'hora' },
-                { label: 'Tipo', type: 'select', val: editTurno.tipo, key: 'tipo', opts: ['Corte', 'Barba', 'Corte + Barba', 'Tintura'] },
-                { label: 'Local', type: 'select', val: editTurno.local, key: 'local', opts: ['Local', 'Sucursal 1', 'Sucursal 2'] }
-              ].map(f => (
-                <div key={f.key}>
-                  <label className="block text-sm text-slate-400 mb-2">{f.label}</label>
-                  {f.type === 'select' ? (
-                    <select value={f.val} onChange={(e) => setEditTurno({...editTurno, [f.key]: e.target.value})} className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-white focus:border-purple-500 focus:outline-none">
-                      {f.opts.map(o => <option key={o}>{o}</option>)}
-                    </select>
-                  ) : (
-                    <input type={f.type} value={f.val} onChange={(e) => setEditTurno({...editTurno, [f.key]: e.target.value})} className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-white focus:border-purple-500 focus:outline-none" />
-                  )}
-                </div>
-              ))}
+            <TurnoForm data={editTurno} setData={setEditTurno} />
+            <div style={{ display: 'flex', gap: 10, marginTop: 20 }}>
+              <button className="btn-g" onClick={() => setShowEditModal(false)} style={{
+                flex: 1, padding: '11px', background: t.surface, border: `1px solid ${t.border}`,
+                borderRadius: 10, color: t.textMuted, cursor: 'pointer',
+                fontFamily: 'Sora, sans-serif', fontSize: 13, fontWeight: 600,
+              }}>Cancelar</button>
+              <button className="btn-p" onClick={saveEdit} style={{
+                flex: 2, padding: '11px', background: '#2563eb', border: 'none',
+                borderRadius: 10, color: '#fff', cursor: 'pointer',
+                fontFamily: 'Sora, sans-serif', fontSize: 13, fontWeight: 700,
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7,
+              }}>
+                <CheckCircle size={14} /> Guardar Cambios
+              </button>
             </div>
-            <div className="flex gap-3 mt-6">
-              <button onClick={() => setShowEditTurnoModal(false)} className="flex-1 px-4 py-3 rounded-lg bg-slate-800 hover:bg-slate-700 transition font-semibold">Cancelar</button>
-              <button onClick={saveEditTurno} className="flex-1 px-4 py-3 rounded-lg bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 transition font-semibold">Guardar</button>
-            </div>
-          </div>
-        </div>
-      )}
+          </Modal>
+        )}
       </div>
-    </div>
+    </>
   );
 }

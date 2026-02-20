@@ -1,359 +1,430 @@
-// Importación de React y el hook useState para manejar el estado del componente
 import React, { useState } from 'react';
-
-
-// Importación de iconos desde lucide-react para usar en la interfaz
-import { Eye, EyeOff, Mail, Lock, Globe } from 'lucide-react';
+import { Eye, EyeOff, Mail, Lock, Globe, Store, ArrowRight, Sparkles, CheckCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
-// Componente principal del sistema de autenticación multi-tenant
-const TenantAuthSystem = () => {
-  const navigate = useNavigate();
-  // Estado para controlar qué vista mostrar: 'register' (registro) o 'login' (inicio de sesión)
-  const [currentView, setCurrentView] = useState('register');
-  
-  // Estado para mostrar/ocultar la contraseña
-  const [showPassword, setShowPassword] = useState(false);
+/* ─── Paleta unificada ─── */
+const t = {
+  bg: '#0a0d12', surface: '#111720', card: '#161d28',
+  border: '#1e2d3d', borderLight: '#243447',
+  accent: '#10b981', accentMuted: '#064e3b',
+  text: '#e2e8f0', textMuted: '#64748b', textDim: '#334155',
+  danger: '#ef4444', purple: '#8b5cf6', info: '#38bdf8',
+};
 
-  // Estado para almacenar los datos del formulario de registro
-  const [registerData, setRegisterData] = useState({
-    email: '',
-    password: '',
-    businessType: '', // Tipo de negocio seleccionado
-    domain: '' // Dominio personalizado del tenant
-  });
+const STYLES = `
+  @import url('https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  .auth-root * { font-family: 'Sora', sans-serif; }
+  .mono { font-family: 'JetBrains Mono', monospace !important; }
 
-  // Estado para almacenar los datos del formulario de inicio de sesión
-  const [loginData, setLoginData] = useState({
-    email: '',
-    password: '',
-    domain: '' // Dominio del tenant al que se quiere acceder
-  });
+  /* Fondo animado */
+  .auth-bg {
+    position: fixed; inset: 0; overflow: hidden; pointer-events: none; z-index: 0;
+  }
+  .auth-bg-orb {
+    position: absolute; border-radius: 50%; filter: blur(80px); opacity: 0.12;
+    animation: orbFloat 8s ease-in-out infinite;
+  }
+  @keyframes orbFloat {
+    0%,100% { transform: translateY(0) scale(1); }
+    50% { transform: translateY(-30px) scale(1.05); }
+  }
 
-  // Array con los tipos de negocio disponibles para seleccionar en el registro
-  const businessTypes = [
-    { id: 'barberia', name: 'Barbería', emoji: '💈' },
-    { id: 'kiosco', name: 'Kiosco', emoji: '🏪' },
-    { id: 'ropa', name: 'Ropa', emoji: '👗' },
-    { id: 'tecnologia', name: 'Tecnología', emoji: '💻' },
-    { id: 'restaurante', name: 'Restaurante', emoji: '🍔' }
-  ];
+  /* Card */
+  .auth-card {
+    position: relative; z-index: 1;
+    background: ${t.card};
+    border: 1px solid ${t.border};
+    border-radius: 22px;
+    padding: 36px 32px;
+    width: 100%; max-width: 420px;
+    animation: cardIn 0.4s cubic-bezier(0.34,1.56,0.64,1);
+  }
+  @keyframes cardIn {
+    from { opacity:0; transform: translateY(16px) scale(0.97); }
+    to   { opacity:1; transform: translateY(0) scale(1); }
+  }
 
-  // Función para manejar el envío del formulario de registro
-  const handleRegister = (e) => {
-    e.preventDefault(); // Prevenir recarga de página
-    console.log('Registro:', registerData); // Log de los datos (temporal)
-    alert('Registro exitoso! Redirigiendo a administración...');
-  };
+  /* Inputs */
+  .auth-input {
+    width: 100%;
+    background: ${t.surface};
+    border: 1px solid ${t.border};
+    border-radius: 11px;
+    padding: 13px 14px 13px 42px;
+    color: ${t.text};
+    font-family: 'Sora', sans-serif;
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.15s, background 0.15s;
+  }
+  .auth-input::placeholder { color: ${t.textMuted}; }
+  .auth-input:focus { border-color: ${t.accent}; background: ${t.accent}08; }
 
-  // Función para manejar el envío del formulario de inicio de sesión
-  const handleLogin = (e) => {
-    e.preventDefault(); // Prevenir recarga de página
-    console.log('Login:', loginData); // Log de los datos (temporal)
-    alert('Login exitoso! Redirigiendo a administración...');
-  };
+  /* Botones */
+  .btn-main {
+    transition: all 0.15s ease;
+    cursor: pointer;
+    border: none;
+  }
+  .btn-main:hover { filter: brightness(1.08); transform: translateY(-1px); box-shadow: 0 8px 24px rgba(16,185,129,0.25); }
+  .btn-main:active { transform: translateY(0); }
 
-  // Función para navegar a diferentes secciones (simulación)
-  const handleNavigate = (section) => {
-    alert(`Navegando a: ${section}`);
-    console.log('Navegando a:', section);
-  };
+  .btn-tab {
+    transition: all 0.2s ease;
+    cursor: pointer; border: none;
+  }
 
-  // Función para actualizar el tipo de negocio seleccionado en el registro
-  const handleBusinessTypeSelect = (typeId) => {
-    setRegisterData({ ...registerData, businessType: typeId });
-  };
-  
-  
+  .btn-btype {
+    transition: all 0.18s ease; cursor: pointer; border: none;
+  }
+  .btn-btype:hover { transform: translateY(-2px); }
+
+  /* Fade entre vistas */
+  .view-enter { animation: vIn 0.22s ease both; }
+  @keyframes vIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+
+  /* Dominio preview */
+  .domain-preview {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px; color: ${t.textMuted};
+    background: ${t.surface}; border: 1px solid ${t.border};
+    border-radius: 7px; padding: 5px 10px; margin-top: 6px;
+    display: flex; align-items: center; gap: 4px;
+  }
+
+  /* Separador */
+  .auth-sep {
+    display: flex; align-items: center; gap: 12px; margin: 16px 0;
+  }
+  .auth-sep::before, .auth-sep::after {
+    content: ''; flex: 1; height: 1px; background: ${t.border};
+  }
+`;
+
+const BUSINESS_TYPES = [
+  { id: 'barberia',    name: 'Barbería',     emoji: '💈' },
+  { id: 'kiosco',     name: 'Kiosco',       emoji: '🏪' },
+  { id: 'ropa',       name: 'Ropa',         emoji: '👗' },
+  { id: 'tecnologia', name: 'Tecnología',   emoji: '💻' },
+  { id: 'restaurante',name: 'Restaurante',  emoji: '🍔' },
+  { id: 'otro',       name: 'Otro',         emoji: '✨' },
+];
+
+/* ─── Input con icono ─── */
+function AuthInput({ icon: Icon, rightIcon, onRightClick, ...props }) {
   return (
-    // Contenedor principal con gradiente de fondo y centrado
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
-        {/* Botones de navegación entre Registro e Inicio de sesión */}
-        <div className="flex gap-3 mb-6 justify-center">
-          {/* Botón de Registro */}
-          <button 
-            onClick={() => setCurrentView('register')}
-            className={`px-6 py-2 rounded-full font-semibold flex items-center gap-2 transition text-sm ${
-              currentView === 'register'
-                ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white' // Estilo activo
-                : 'bg-slate-700 text-slate-300 hover:bg-slate-600' // Estilo inactivo
-            }`}
-          >
-            <span>👤</span> Registro
-          </button>
+    <div style={{ position: 'relative' }}>
+      <Icon size={16} color={t.textMuted} style={{ position: 'absolute', left: 13, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
+      <input className="auth-input" {...props} />
+      {rightIcon && (
+        <button type="button" onClick={onRightClick} style={{
+          position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)',
+          background: 'none', border: 'none', cursor: 'pointer', color: t.textMuted,
+          display: 'flex', alignItems: 'center',
+        }}>
+          {rightIcon}
+        </button>
+      )}
+    </div>
+  );
+}
 
-          {/* Botón de Iniciar sesión */}
-          <button 
-            onClick={() => setCurrentView('login')}
-            className={`px-6 py-2 rounded-full font-semibold flex items-center gap-2 transition text-sm ${
-              currentView === 'login'
-                ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white' // Estilo activo
-                : 'bg-slate-700 text-slate-300 hover:bg-slate-600' // Estilo inactivo
-            }`}
-          >
-            <span>→</span> Iniciar sesión
-          </button>
-        </div>
+/* ─── Label ─── */
+const Label = ({ children }) => (
+  <div style={{ fontSize: 12, fontWeight: 600, color: t.textMuted, marginBottom: 8, letterSpacing: '0.2px' }}>
+    {children}
+  </div>
+);
 
-        {/* Tarjeta principal que contiene los formularios */}
-        <div className="bg-slate-800/50 backdrop-blur-sm rounded-2xl p-5 border border-slate-700">
+export default function TenantAuthSystem() {
+  const navigate = useNavigate();
+  const [view, setView]                 = useState('login');
+  const [showPassword, setShowPassword] = useState(false);
+  const [registerData, setRegisterData] = useState({ email: '', password: '', businessType: '', domain: '' });
+  const [loginData, setLoginData]       = useState({ email: '', password: '', domain: '' });
 
-          {/* FORMULARIO DE REGISTRO - Se muestra cuando currentView es 'register' */}
-          {currentView === 'register' && (
-            <>
-              {/* Botón decorativo de título */}
-              <div className="flex justify-center mb-4">
-                <button className="px-6 py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-full font-semibold flex items-center gap-2 hover:opacity-90 transition text-sm">
-                  <span>✨</span> Crear cuenta
-                </button>
-              </div>
+  const setReg = (k, v) => setRegisterData(prev => ({ ...prev, [k]: v }));
+  const setLog = (k, v) => setLoginData(prev => ({ ...prev, [k]: v }));
 
-              {/* Título y descripción del formulario de registro */}
-              <div className="text-center mb-5">
-                <h1 className="text-xl font-bold text-white mb-1">
-                  Comenzá tu negocio digital
-                </h1>
-                <p className="text-slate-400 text-sm">
-                  Gratis, sin tarjeta de crédito
-                </p>
-              </div>
+  const handleRegister = (e) => {
+    e?.preventDefault();
+    console.log('Registro:', registerData);
+    alert('¡Registro exitoso! Redirigiendo...');
+  };
 
-              {/* Contenedor de campos del formulario */}
-              <div className="space-y-3">
-                {/* Campo de EMAIL */}
-                <div>
-                  <label className="block text-white font-semibold mb-1.5 text-sm">
-                    Email
-                  </label>
-                  <div className="relative">
-                    {/* Icono de email */}
-                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                    <input
-                      type="email"
-                      placeholder="tu@email.com"
-                      value={registerData.email}
-                      // Actualizar el estado con el valor ingresado
-                      onChange={(e) =>
-                        setRegisterData({ ...registerData, email: e.target.value })
-                      }
-                      className="w-full bg-slate-700/50 border border-slate-600 rounded-lg py-2.5 pl-10 pr-3 text-white text-sm placeholder-slate-400 focus:outline-none focus:border-blue-500 transition"
-                    />
-                  </div>
+  const handleLogin = (e) => {
+    e?.preventDefault();
+    console.log('Login:', loginData);
+    navigate('/administrar');
+  };
+
+  return (
+    <>
+      <style>{STYLES}</style>
+
+      {/* Fondo con orbs */}
+      <div className="auth-bg">
+        <div className="auth-bg-orb" style={{ width: 400, height: 400, background: t.accent, top: '-100px', left: '-100px', animationDelay: '0s' }} />
+        <div className="auth-bg-orb" style={{ width: 300, height: 300, background: t.purple, bottom: '-80px', right: '-60px', animationDelay: '4s' }} />
+        <div className="auth-bg-orb" style={{ width: 200, height: 200, background: t.info, top: '60%', left: '40%', animationDelay: '2s', opacity: 0.07 }} />
+      </div>
+
+      <div className="auth-root" style={{
+        minHeight: '100vh', background: t.bg,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        padding: 16, position: 'relative',
+      }}>
+        <div style={{ width: '100%', maxWidth: 420 }}>
+
+          {/* Logo / Brand */}
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: 28 }}>
+            <div style={{
+              width: 52, height: 52, borderRadius: 16,
+              background: `linear-gradient(135deg, ${t.accent}, #0891b2)`,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              marginBottom: 12, boxShadow: `0 8px 32px ${t.accent}40`,
+            }}>
+              <Store size={24} color="#fff" />
+            </div>
+            <div style={{ fontSize: 20, fontWeight: 800, color: t.text, letterSpacing: '-0.5px' }}>
+              Sistema de Gestión
+            </div>
+            <div style={{ fontSize: 12, color: t.textMuted, marginTop: 3 }}>
+              Administrá tu negocio desde cualquier lugar
+            </div>
+          </div>
+
+          {/* Tabs */}
+          <div style={{
+            display: 'flex', gap: 4,
+            background: t.surface, border: `1px solid ${t.border}`,
+            borderRadius: 14, padding: 4, marginBottom: 18,
+          }}>
+            {[
+              { id: 'login',    label: 'Iniciar sesión' },
+              { id: 'register', label: 'Crear cuenta'   },
+            ].map(({ id, label }) => (
+              <button
+                key={id}
+                className="btn-tab"
+                onClick={() => setView(id)}
+                style={{
+                  flex: 1, padding: '10px',
+                  background: view === id ? t.accent : 'transparent',
+                  border: 'none', borderRadius: 10,
+                  color: view === id ? '#fff' : t.textMuted,
+                  fontWeight: view === id ? 700 : 500,
+                  fontSize: 13, fontFamily: 'Sora, sans-serif',
+                }}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+
+          {/* Card */}
+          <div className="auth-card">
+
+            {/* ─── LOGIN ─── */}
+            {view === 'login' && (
+              <div className="view-enter">
+                <div style={{ marginBottom: 24 }}>
+                  <h2 style={{ fontSize: 22, fontWeight: 800, color: t.text, marginBottom: 4 }}>
+                    Bienvenido de vuelta
+                  </h2>
+                  <p style={{ fontSize: 13, color: t.textMuted }}>
+                    Ingresá a tu negocio digital
+                  </p>
                 </div>
 
-                {/* Campo de CONTRASEÑA */}
-                <div>
-                  <label className="block text-white font-semibold mb-1.5 text-sm">
-                    Contraseña
-                  </label>
-                  <div className="relative">
-                    {/* Icono de candado */}
-                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                    <input
-                      // Tipo dinámico según si se muestra la contraseña o no
-                      type={showPassword ? 'text' : 'password'}
-                      placeholder="••••••••"
-                      value={registerData.password}
-                      onChange={(e) =>
-                        setRegisterData({ ...registerData, password: e.target.value })
-                      }
-                      className="w-full bg-slate-700/50 border border-slate-600 rounded-lg py-2.5 pl-10 pr-10 text-white text-sm placeholder-slate-400 focus:outline-none focus:border-blue-500 transition"
-                    />
-                    {/* Botón para mostrar/ocultar contraseña */}
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white transition"
-                    >
-                      {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                    </button>
-                  </div>
-                </div>
-
-                {/* Selector de TIPO DE NEGOCIO */}
-                <div>
-                  <label className="block text-white font-semibold mb-2 text-sm">
-                    Tipo de negocio
-                  </label>
-                  {/* Grid de 3 columnas con los tipos de negocio */}
-                  <div className="grid grid-cols-3 gap-2">
-                    {businessTypes.map(type => (
-                      <button
-                        key={type.id}
-                        type="button"
-                        onClick={() => handleBusinessTypeSelect(type.id)}
-                        // Estilo condicional según si está seleccionado
-                        className={`p-3 rounded-lg border-2 transition-all ${
-                          registerData.businessType === type.id
-                            ? 'border-blue-500 bg-blue-500/10' // Seleccionado
-                            : 'border-slate-600 bg-slate-700/30 hover:border-slate-500' // No seleccionado
-                        }`}
-                      >
-                        <div className="text-2xl mb-1">{type.emoji}</div>
-                        <div className="text-white font-medium text-xs">
-                          {type.name}
-                        </div>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Campo de DOMINIO personalizado */}
-                <div>
-                  <label className="block text-white font-semibold mb-1.5 text-sm">
-                    Tu dominio
-                  </label>
-                  <div className="relative">
-                    {/* Icono de globo */}
-                    <Globe className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                    <input
-                      type="text"
-                      placeholder="minegocio"
-                      value={registerData.domain}
-                      onChange={(e) =>
-                        setRegisterData({ ...registerData, domain: e.target.value })
-                      }
-                      className="w-full bg-slate-700/50 border border-slate-600 rounded-lg py-2.5 pl-10 pr-3 text-white text-sm placeholder-slate-400 focus:outline-none focus:border-blue-500 transition"
-                    />
-                  </div>
-                </div>
-
-                {/* Botón de envío del formulario de registro */}
-                <button
-                  onClick={handleRegister}
-                  className="w-full py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg font-semibold hover:opacity-90 transition flex items-center justify-center gap-2 text-sm mt-4"
-                >
-                  Crear mi negocio
-                  <span>→</span>
-                </button>
-              </div>
-            </>
-          )}
-
-          {/* FORMULARIO DE LOGIN - Se muestra cuando currentView es 'login' */}
-          {currentView === 'login' && (
-            <>
-              {/* Botón decorativo de título */}
-              <div className="flex justify-center mb-4">
-                <button className="px-6 py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-full font-semibold flex items-center gap-2 hover:opacity-90 transition text-sm">
-                  <span>🔐</span> Acceder
-                </button>
-              </div>
-
-              {/* Título y descripción del formulario de login */}
-              <div className="text-center mb-5">
-                <h1 className="text-xl font-bold text-white mb-1">
-                  Bienvenido de vuelta
-                </h1>
-                <p className="text-slate-400 text-sm">
-                  Ingresa a tu negocio digital
-                </p>
-              </div>
-
-              {/* Contenedor de campos del formulario */}
-              <div className="space-y-3">
-                {/* Campo de EMAIL */}
-                <div>
-                  <label className="block text-white font-semibold mb-1.5 text-sm">
-                    Email
-                  </label>
-                  <div className="relative">
-                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                    <input
-                      type="email"
-                      placeholder="tu@email.com"
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                  <div>
+                    <Label>Email</Label>
+                    <AuthInput
+                      icon={Mail} type="email" placeholder="tu@email.com"
                       value={loginData.email}
-                      onChange={(e) =>
-                        setLoginData({ ...loginData, email: e.target.value })
-                      }
-                      className="w-full bg-slate-700/50 border border-slate-600 rounded-lg py-2.5 pl-10 pr-3 text-white text-sm placeholder-slate-400 focus:outline-none focus:border-blue-500 transition"
+                      onChange={e => setLog('email', e.target.value)}
                     />
                   </div>
-                </div>
 
-                {/* Campo de CONTRASEÑA */}
-                <div>
-                  <label className="block text-white font-semibold mb-1.5 text-sm">
-                    Contraseña
-                  </label>
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                    <input
+                  <div>
+                    <Label>Contraseña</Label>
+                    <AuthInput
+                      icon={Lock}
                       type={showPassword ? 'text' : 'password'}
                       placeholder="••••••••"
                       value={loginData.password}
-                      onChange={(e) =>
-                        setLoginData({ ...loginData, password: e.target.value })
-                      }
-                      className="w-full bg-slate-700/50 border border-slate-600 rounded-lg py-2.5 pl-10 pr-10 text-white text-sm placeholder-slate-400 focus:outline-none focus:border-blue-500 transition"
+                      onChange={e => setLog('password', e.target.value)}
+                      rightIcon={showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                      onRightClick={() => setShowPassword(!showPassword)}
                     />
-                    {/* Botón para mostrar/ocultar contraseña */}
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white transition"
-                    >
-                      {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                    </button>
                   </div>
-                </div>
 
-                {/* Campo de DOMINIO - necesario para identificar el tenant */}
-                <div>
-                  <label className="block text-white font-semibold mb-1.5 text-sm">
-                    Dominio
-                  </label>
-                  <div className="relative">
-                    <Globe className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                    <input
-                      type="text"
-                      placeholder="minegocio"
+                  <div>
+                    <Label>Dominio del negocio</Label>
+                    <AuthInput
+                      icon={Globe} type="text" placeholder="minegocio"
                       value={loginData.domain}
-                      onChange={(e) =>
-                        setLoginData({ ...loginData, domain: e.target.value })
-                      }
-                      className="w-full bg-slate-700/50 border border-slate-600 rounded-lg py-2.5 pl-10 pr-3 text-white text-sm placeholder-slate-400 focus:outline-none focus:border-blue-500 transition"
+                      onChange={e => setLog('domain', e.target.value)}
                     />
+                    {loginData.domain && (
+                      <div className="domain-preview">
+                        <Globe size={10} />
+                        <span>{loginData.domain}.sistema.ar</span>
+                      </div>
+                    )}
                   </div>
                 </div>
 
-                {/* Botón de envío del formulario de login */}
                 <button
+                  className="btn-main"
                   onClick={handleLogin}
-                  className="w-full py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg font-semibold hover:opacity-90 transition flex items-center justify-center gap-2 text-sm mt-4"
+                  style={{
+                    width: '100%', marginTop: 22, padding: '14px',
+                    background: t.accent, borderRadius: 12,
+                    color: '#fff', fontSize: 14, fontWeight: 700,
+                    fontFamily: 'Sora, sans-serif',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                  }}
                 >
-                  Iniciar sesión
-                  <span>→</span>
+                  Iniciar sesión <ArrowRight size={15} />
                 </button>
 
-                {/* Separador con texto */}
-                <div className="relative my-4">
-                  <div className="absolute inset-0 flex items-center">
-                    <div className="w-full border-t border-slate-600"></div>
-                  </div>
-                  <div className="relative flex justify-center text-xs">
-                    <span className="px-2 bg-slate-800/50 text-slate-400">Acceso para personal</span>
+                <div className="auth-sep">
+                  <span style={{ fontSize: 11, color: t.textDim }}>acceso directo</span>
+                </div>
+
+                <button
+                  onClick={() => navigate('/administrar')}
+                  style={{
+                    width: '100%', padding: '12px',
+                    background: t.surface, border: `1px solid ${t.border}`,
+                    borderRadius: 11, color: t.textMuted, cursor: 'pointer',
+                    fontFamily: 'Sora, sans-serif', fontSize: 13, fontWeight: 600,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7,
+                    transition: 'all 0.15s',
+                  }}
+                  onMouseEnter={e => (e.currentTarget.style.borderColor = t.borderLight)}
+                  onMouseLeave={e => (e.currentTarget.style.borderColor = t.border)}
+                >
+                  🏠 Ir al inicio sin sesión
+                </button>
+              </div>
+            )}
+
+            {/* ─── REGISTRO ─── */}
+            {view === 'register' && (
+              <div className="view-enter">
+                <div style={{ marginBottom: 22 }}>
+                  <h2 style={{ fontSize: 22, fontWeight: 800, color: t.text, marginBottom: 4 }}>
+                    Comenzá tu negocio digital
+                  </h2>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <div style={{
+                      background: `${t.accent}15`, border: `1px solid ${t.accent}30`,
+                      borderRadius: 20, padding: '2px 10px',
+                      fontSize: 11, color: t.accent, fontWeight: 600,
+                      display: 'flex', alignItems: 'center', gap: 4,
+                    }}>
+                      <Sparkles size={10} /> Gratis · Sin tarjeta de crédito
+                    </div>
                   </div>
                 </div>
 
-                {/* Grid de botones para personal/encargado */}
-                <div className="grid grid-cols-1 gap-2">
-                  <button
-                    onClick={() => navigate('/administrar')}
-                    className="py-2.5 bg-slate-700/50 border border-slate-600 text-white rounded-lg font-medium hover:bg-slate-700 hover:border-slate-500 transition flex items-center justify-center gap-2 text-sm"
-                  >
-                    <span>🏠</span> Inicio
-                  </button>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                  <div>
+                    <Label>Email</Label>
+                    <AuthInput
+                      icon={Mail} type="email" placeholder="tu@email.com"
+                      value={registerData.email}
+                      onChange={e => setReg('email', e.target.value)}
+                    />
+                  </div>
+
+                  <div>
+                    <Label>Contraseña</Label>
+                    <AuthInput
+                      icon={Lock}
+                      type={showPassword ? 'text' : 'password'}
+                      placeholder="••••••••"
+                      value={registerData.password}
+                      onChange={e => setReg('password', e.target.value)}
+                      rightIcon={showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                      onRightClick={() => setShowPassword(!showPassword)}
+                    />
+                  </div>
+
+                  {/* Tipo de negocio */}
+                  <div>
+                    <Label>Tipo de negocio</Label>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
+                      {BUSINESS_TYPES.map(type => {
+                        const selected = registerData.businessType === type.id;
+                        return (
+                          <button
+                            key={type.id}
+                            className="btn-btype"
+                            type="button"
+                            onClick={() => setReg('businessType', type.id)}
+                            style={{
+                              padding: '12px 8px',
+                              background: selected ? `${t.accent}15` : t.surface,
+                              border: `1px solid ${selected ? t.accent : t.border}`,
+                              borderRadius: 11, cursor: 'pointer',
+                              display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5,
+                            }}
+                          >
+                            <span style={{ fontSize: 22 }}>{type.emoji}</span>
+                            <span style={{ fontSize: 11, fontWeight: 600, color: selected ? t.accent : t.textMuted, fontFamily: 'Sora, sans-serif' }}>
+                              {type.name}
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Dominio */}
+                  <div>
+                    <Label>Tu dominio único</Label>
+                    <AuthInput
+                      icon={Globe} type="text" placeholder="minegocio"
+                      value={registerData.domain}
+                      onChange={e => setReg('domain', e.target.value)}
+                    />
+                    {registerData.domain && (
+                      <div className="domain-preview">
+                        <CheckCircle size={10} color={t.accent} />
+                        <span><span style={{ color: t.accent }}>{registerData.domain}</span>.sistema.ar</span>
+                      </div>
+                    )}
+                  </div>
                 </div>
+
+                <button
+                  className="btn-main"
+                  onClick={handleRegister}
+                  style={{
+                    width: '100%', marginTop: 22, padding: '14px',
+                    background: t.accent, borderRadius: 12,
+                    color: '#fff', fontSize: 14, fontWeight: 700,
+                    fontFamily: 'Sora, sans-serif',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                  }}
+                >
+                  Crear mi negocio <ArrowRight size={15} />
+                </button>
               </div>
-            </>
-          )}
+            )}
+          </div>
+
+          {/* Footer */}
+          <div style={{ textAlign: 'center', marginTop: 20, fontSize: 11, color: t.textDim }}>
+            Al continuar aceptás los términos de servicio y la política de privacidad
+          </div>
         </div>
       </div>
-    </div>
+    </>
   );
-};
-
-// Exportación del componente para su uso en otras partes de la aplicación
-export default TenantAuthSystem;
+}
