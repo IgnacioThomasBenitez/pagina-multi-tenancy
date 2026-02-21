@@ -1,327 +1,532 @@
 import React, { useState, useEffect } from 'react';
-import { Clock, Users, CheckCircle, X } from 'lucide-react';
+import { Clock, Users, CheckCircle, X, ChefHat, AlertCircle, Flame, Utensils } from 'lucide-react';
 import Sidebar from '../components/Sidebar';
 
-const RestaurantOrders = () => {
-  const [selectedTable, setSelectedTable] = useState(null);
-  const [orders, setOrders] = useState([]);
-  const [finalizados, setFinalizados] = useState(0);
+/* ─── Paleta unificada ─── */
+const t = {
+  bg: '#0a0d12', surface: '#111720', card: '#161d28',
+  border: '#1e2d3d', borderLight: '#243447',
+  accent: '#10b981', accentMuted: '#064e3b',
+  text: '#e2e8f0', textMuted: '#64748b', textDim: '#334155',
+  danger: '#ef4444', gold: '#f59e0b', purple: '#8b5cf6', info: '#38bdf8',
+};
 
-  // Cargar órdenes desde localStorage
+const STATUS = {
+  'entrante':  { color: t.accent, bg: `${t.accent}18`, border: `${t.accent}35`, label: 'Entrante',  pulse: false },
+  'tardando':  { color: t.gold,   bg: `${t.gold}15`,   border: `${t.gold}30`,   label: 'Preparando', pulse: false },
+  'muy-tarde': { color: t.danger, bg: `${t.danger}15`, border: `${t.danger}30`, label: 'Muy tarde', pulse: true  },
+};
+
+const STYLES = `
+  @import url('https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  .kitch-root * { font-family: 'Sora', sans-serif; }
+  .mono { font-family: 'JetBrains Mono', monospace !important; }
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: ${t.border}; border-radius: 2px; }
+
+  .order-card {
+    background: ${t.card}; border: 1px solid ${t.border};
+    border-radius: 18px; cursor: pointer; overflow: hidden;
+    transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+    display: flex; flex-direction: column;
+  }
+  .order-card:hover { transform: translateY(-3px); box-shadow: 0 12px 32px rgba(0,0,0,0.4); border-color: ${t.borderLight}; }
+  .order-card.active { border-color: ${t.accent}; box-shadow: 0 0 0 1px ${t.accent}30, 0 12px 32px rgba(16,185,129,0.12); }
+  .order-card.status-muy-tarde { border-color: ${t.danger}40; }
+
+  .stat-c { transition: transform 0.2s ease; }
+  .stat-c:hover { transform: translateY(-2px); }
+
+  .btn-p { transition: all 0.15s ease; cursor: pointer; border: none; }
+  .btn-p:hover { filter: brightness(1.1); transform: translateY(-1px); box-shadow: 0 6px 20px rgba(16,185,129,0.25); }
+  .btn-p:active { transform: translateY(0); }
+
+  /* Drawer */
+  .drawer { 
+    position: fixed; right: 0; top: 0; height: 100vh; width: 460px;
+    background: ${t.surface}; border-left: 1px solid ${t.border};
+    z-index: 50; overflow-y: auto;
+    transform: translateX(100%); transition: transform 0.3s cubic-bezier(0.16,1,0.3,1);
+  }
+  .drawer.open { transform: translateX(0); }
+
+  .backdrop { 
+    position: fixed; inset: 0; background: rgba(0,0,0,0.65);
+    backdropFilter: blur(4px); z-index: 40;
+    animation: bdIn 0.2s ease;
+  }
+  @keyframes bdIn { from{opacity:0}to{opacity:1} }
+
+  /* Status dot pulse */
+  .dot-pulse { animation: dp 1.5s infinite; }
+  @keyframes dp { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.4;transform:scale(0.7)} }
+
+  /* Time urgency glow on card */
+  .urgency-glow { box-shadow: 0 0 20px ${t.danger}25, 0 12px 32px rgba(0,0,0,0.4); }
+
+  /* Notification badge */
+  .notif-badge {
+    position: absolute; top: -4px; right: -4px;
+    width: 16px; height: 16px; border-radius: 50%;
+    background: ${t.danger}; font-size: 9px; font-weight: 700; color: #fff;
+    display: flex; align-items: center; justify-content: center;
+    animation: dp 1.5s infinite;
+  }
+
+  /* Item rows */
+  .item-row { transition: background 0.15s; }
+  .item-row:hover { background: ${t.border}22 !important; }
+`;
+
+const formatTime = (min) => {
+  if (min < 60) return `${min} min`;
+  return `${Math.floor(min / 60)}h ${min % 60}min`;
+};
+
+/* ─── Stat Card ─── */
+function StatCard({ label, value, color, Icon }) {
+  return (
+    <div className="stat-c" style={{
+      background: t.card, border: `1px solid ${t.border}`, borderRadius: 14,
+      padding: '16px 18px', display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+    }}>
+      <div>
+        <div style={{ fontSize: 10, fontWeight: 700, color: t.textMuted, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 5 }}>{label}</div>
+        <div className="mono" style={{ fontSize: 24, fontWeight: 700, color }}>{value}</div>
+      </div>
+      <div style={{
+        width: 36, height: 36, borderRadius: 10,
+        background: `${color}18`, border: `1px solid ${color}25`,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+      }}>
+        <Icon size={16} color={color} />
+      </div>
+    </div>
+  );
+}
+
+/* ─── Status pill ─── */
+function StatusPill({ status }) {
+  const cfg = STATUS[status] || STATUS['entrante'];
+  return (
+    <span style={{
+      display: 'inline-flex', alignItems: 'center', gap: 5,
+      background: cfg.bg, color: cfg.color, border: `1px solid ${cfg.border}`,
+      borderRadius: 20, padding: '3px 10px', fontSize: 10, fontWeight: 700,
+    }}>
+      <span
+        className={cfg.pulse ? 'dot-pulse' : ''}
+        style={{ width: 5, height: 5, borderRadius: '50%', background: cfg.color, flexShrink: 0 }}
+      />
+      {cfg.label}
+    </span>
+  );
+}
+
+/* ─── MAIN ─── */
+const RestaurantOrders = () => {
+  const [selectedOrder, setSelectedOrder] = useState(null);
+  const [drawerOpen,    setDrawerOpen]    = useState(false);
+  const [orders, setOrders]               = useState([]);
+  const [finalizados, setFinalizados]     = useState(0);
+
   useEffect(() => {
     loadOrders();
     loadFinalizados();
-    
-    // Actualizar cada 2 segundos para detectar nuevas órdenes
-    const interval = setInterval(() => {
-      loadOrders();
-    }, 2000);
-
+    const interval = setInterval(loadOrders, 2000);
     return () => clearInterval(interval);
   }, []);
 
-  // Incrementar tiempo cada minuto
   useEffect(() => {
-    const timeInterval = setInterval(() => {
-      setOrders(prevOrders => {
-        const updatedOrders = prevOrders.map(order => {
-          const newTime = order.time + 1;
-          let newStatus = order.status;
-          
-          if (newTime > 20) newStatus = 'muy-tarde';
-          else if (newTime > 10) newStatus = 'tardando';
-          
-          return { ...order, time: newTime, status: newStatus };
+    const interval = setInterval(() => {
+      setOrders(prev => {
+        const updated = prev.map(o => {
+          const newTime = o.time + 1;
+          let status = o.status;
+          if (newTime > 20) status = 'muy-tarde';
+          else if (newTime > 10) status = 'tardando';
+          return { ...o, time: newTime, status };
         });
-        
-        // Guardar en localStorage
-        if (updatedOrders.length > 0) {
-          localStorage.setItem('kitchenOrders', JSON.stringify(updatedOrders));
-        }
-        
-        return updatedOrders;
+        if (updated.length) localStorage.setItem('kitchenOrders', JSON.stringify(updated));
+        return updated;
       });
-    }, 60000); // Cada minuto
-
-    return () => clearInterval(timeInterval);
+    }, 60000);
+    return () => clearInterval(interval);
   }, []);
 
   const loadOrders = () => {
-    const storedOrders = localStorage.getItem('kitchenOrders');
-    if (storedOrders) {
-      setOrders(JSON.parse(storedOrders));
-    }
+    const raw = localStorage.getItem('kitchenOrders');
+    if (raw) setOrders(JSON.parse(raw));
   };
 
   const loadFinalizados = () => {
-    const count = localStorage.getItem('finalizadosCount');
-    if (count) {
-      setFinalizados(parseInt(count));
-    }
+    const n = localStorage.getItem('finalizadosCount');
+    if (n) setFinalizados(parseInt(n));
   };
 
-  const getStatusColor = (status) => {
-    switch(status) {
-      case 'entrante': return 'bg-green-500';
-      case 'tardando': return 'bg-yellow-500';
-      case 'muy-tarde': return 'bg-red-500';
-      default: return 'bg-gray-500';
-    }
+  const openOrder = (order) => {
+    setSelectedOrder(order);
+    setDrawerOpen(true);
   };
 
-  const getStatusText = (status) => {
-    switch(status) {
-      case 'entrante': return 'Entrante';
-      case 'tardando': return 'Tardando';
-      case 'muy-tarde': return 'Muy tarde';
-      default: return 'Desconocido';
-    }
-  };
-
-  const groupedOrders = {
-    entrante: orders.filter(o => o.status === 'entrante'),
-    tardando: orders.filter(o => o.status === 'tardando'),
-    'muy-tarde': orders.filter(o => o.status === 'muy-tarde')
+  const closeDrawer = () => {
+    setDrawerOpen(false);
+    setTimeout(() => setSelectedOrder(null), 300);
   };
 
   const markAsReady = (orderId) => {
-    // Incrementar contador de finalizados
     const newCount = finalizados + 1;
     setFinalizados(newCount);
     localStorage.setItem('finalizadosCount', newCount.toString());
-    
-    // Eliminar la orden
-    const updatedOrders = orders.filter(o => o.id !== orderId);
-    setOrders(updatedOrders);
-    localStorage.setItem('kitchenOrders', JSON.stringify(updatedOrders));
-    setSelectedTable(null);
+    const updated = orders.filter(o => o.id !== orderId);
+    setOrders(updated);
+    localStorage.setItem('kitchenOrders', JSON.stringify(updated));
+    closeDrawer();
   };
 
-  const formatTime = (minutes) => {
-    if (minutes < 60) {
-      return `${minutes} min`;
-    }
-    const hours = Math.floor(minutes / 60);
-    const mins = minutes % 60;
-    return `${hours}h ${mins}min`;
+  const grouped = {
+    entrante:   orders.filter(o => o.status === 'entrante'),
+    tardando:   orders.filter(o => o.status === 'tardando'),
+    'muy-tarde': orders.filter(o => o.status === 'muy-tarde'),
   };
 
   return (
-    <div className="flex min-h-screen bg-gray-900 text-white">
-      <Sidebar />
-      
-      <div className="flex-1 p-6 overflow-auto">
-        <div className="max-w-7xl mx-auto">
-          <div className="flex justify-between items-center mb-8">
+    <>
+      <style>{STYLES}</style>
+
+      <div className="kitch-root" style={{ display: 'flex', height: '100vh', background: t.bg }}>
+        <Sidebar />
+
+        <div style={{ flex: 1, overflowY: 'auto', padding: '28px 30px' }}>
+
+          {/* ─── Header ─── */}
+          <div style={{
+            background: t.surface, border: `1px solid ${t.border}`,
+            borderRadius: 18, padding: '20px 26px', marginBottom: 22,
+            display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+          }}>
             <div>
-              <h1 className="text-3xl font-bold">Sistema de Órdenes - Cocina</h1>
-              <p className="text-gray-400 mt-1">Las órdenes se actualizan automáticamente desde Mesas</p>
+              <div style={{
+                display: 'inline-flex', alignItems: 'center', gap: 5,
+                background: `${t.accent}15`, border: `1px solid ${t.accent}30`,
+                borderRadius: 20, padding: '3px 11px',
+                fontSize: 10, color: t.accent, fontWeight: 700,
+                letterSpacing: '0.8px', textTransform: 'uppercase', marginBottom: 8,
+              }}>
+                <ChefHat size={10} /> Cocina en vivo
+              </div>
+              <h1 style={{ fontSize: 26, fontWeight: 800, color: t.text, letterSpacing: '-0.5px', marginBottom: 3 }}>
+                Sistema de Órdenes
+              </h1>
+              <p style={{ fontSize: 13, color: t.textMuted }}>
+                Actualización automática desde Mesas · cada 2 seg
+              </p>
             </div>
-            <div className="grid grid-cols-4 gap-3">
-              <div className="bg-gray-800 rounded-lg p-3 text-center border border-gray-700">
-                <p className="text-xs text-gray-400 mb-1">Finalizados</p>
-                <p className="text-2xl font-bold text-blue-400">{finalizados}</p>
-              </div>
-              <div className="bg-gray-800 rounded-lg p-3 text-center border border-gray-700">
-                <p className="text-xs text-gray-400 mb-1">Entrante</p>
-                <p className="text-2xl font-bold text-green-400">{groupedOrders.entrante.length}</p>
-              </div>
-              <div className="bg-gray-800 rounded-lg p-3 text-center border border-gray-700">
-                <p className="text-xs text-gray-400 mb-1">Preparando</p>
-                <p className="text-2xl font-bold text-yellow-400">{groupedOrders.tardando.length}</p>
-              </div>
-              <div className="bg-gray-800 rounded-lg p-3 text-center border border-gray-700">
-                <p className="text-xs text-gray-400 mb-1">Total Activos</p>
-                <p className="text-2xl font-bold">{orders.length}</p>
-              </div>
-            </div>
-          </div>
-          
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-            <div className="bg-gradient-to-br from-gray-800 to-gray-900 rounded-xl p-6 lg:col-span-3 shadow-lg">
-              <h2 className="text-xl font-semibold mb-6">Estados de Órdenes</h2>
-              
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="flex items-center justify-between gap-3 p-4 bg-gray-700 bg-opacity-50 rounded-lg hover:bg-opacity-70 transition-all">
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 bg-green-500 rounded-full shadow-lg shadow-green-500/50"></div>
-                    <span className="font-medium">Entrante</span>
-                  </div>
-                  <span className="text-2xl font-bold">{groupedOrders.entrante.length}</span>
-                </div>
-                <div className="flex items-center justify-between gap-3 p-4 bg-gray-700 bg-opacity-50 rounded-lg hover:bg-opacity-70 transition-all">
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 bg-yellow-500 rounded-full shadow-lg shadow-yellow-500/50"></div>
-                    <span className="font-medium">Preparando</span>
-                  </div>
-                  <span className="text-2xl font-bold">{groupedOrders.tardando.length}</span>
-                </div>
-                <div className="flex items-center justify-between gap-3 p-4 bg-gray-700 bg-opacity-50 rounded-lg hover:bg-opacity-70 transition-all">
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 bg-red-500 rounded-full shadow-lg shadow-red-500/50 animate-pulse"></div>
-                    <span className="font-medium">Muy tarde</span>
-                  </div>
-                  <span className="text-2xl font-bold">{groupedOrders['muy-tarde'].length}</span>
-                </div>
+
+            {/* Live indicator */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <div style={{
+                background: `${t.accent}15`, border: `1px solid ${t.accent}30`,
+                borderRadius: 10, padding: '8px 14px',
+                fontSize: 12, color: t.accent, fontWeight: 600,
+                display: 'flex', alignItems: 'center', gap: 6,
+              }}>
+                <span className="dot-pulse" style={{ width: 7, height: 7, borderRadius: '50%', background: t.accent, display: 'inline-block' }} />
+                En vivo
               </div>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-            {orders.map((order) => (
-              <div
-                key={order.id}
-                onClick={() => setSelectedTable(order)}
-                className={`bg-gradient-to-br from-gray-800 to-gray-900 rounded-xl p-5 cursor-pointer transition-all duration-300 hover:scale-105 hover:shadow-xl border-2 ${
-                  selectedTable?.id === order.id ? 'border-blue-500 shadow-lg shadow-blue-500/30' : 'border-transparent'
-                }`}
-              >
-                <div className="flex justify-between items-start mb-4">
-                  <div>
-                    <h3 className="text-xl font-bold">{order.table}</h3>
-                    <p className="text-xs text-gray-500">Orden #{order.id}</p>
-                    <div className="flex items-center gap-2 text-sm text-gray-400 mt-2">
-                      <Clock size={14} />
-                      <span>{formatTime(order.time)}</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-sm text-gray-400 mt-1">
-                      <Users size={14} />
-                      <span>{order.guests} {order.guests === 1 ? 'item' : 'items'}</span>
-                    </div>
-                  </div>
-                  <div className={`px-3 py-1 rounded-full text-xs font-semibold ${getStatusColor(order.status)}`}>
-                    {getStatusText(order.status)}
-                  </div>
+          {/* ─── Stats ─── */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14, marginBottom: 22 }}>
+            <StatCard label="Finalizados"   value={finalizados}                    color={t.info}   Icon={CheckCircle} />
+            <StatCard label="Entrantes"     value={grouped.entrante.length}        color={t.accent} Icon={Utensils}    />
+            <StatCard label="Preparando"    value={grouped.tardando.length}        color={t.gold}   Icon={Clock}       />
+            <StatCard label="Muy tarde"     value={grouped['muy-tarde'].length}    color={t.danger} Icon={Flame}       />
+          </div>
+
+          {/* ─── Estado visual por columna ─── */}
+          <div style={{
+            background: t.card, border: `1px solid ${t.border}`,
+            borderRadius: 16, padding: '16px 20px', marginBottom: 22,
+            display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12,
+          }}>
+            {[
+              { key: 'entrante',   label: 'Entrante',   color: t.accent, count: grouped.entrante.length    },
+              { key: 'tardando',   label: 'Preparando', color: t.gold,   count: grouped.tardando.length   },
+              { key: 'muy-tarde',  label: 'Muy tarde',  color: t.danger, count: grouped['muy-tarde'].length, pulse: true },
+            ].map(({ key, label, color, count, pulse }) => (
+              <div key={key} style={{
+                background: t.surface, border: `1px solid ${t.border}`,
+                borderRadius: 12, padding: '12px 16px',
+                display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <span
+                    className={pulse && count > 0 ? 'dot-pulse' : ''}
+                    style={{ width: 10, height: 10, borderRadius: '50%', background: color, flexShrink: 0 }}
+                  />
+                  <span style={{ fontSize: 13, fontWeight: 600, color: t.text }}>{label}</span>
                 </div>
-
-                <div className="space-y-2 mb-4">
-                  {order.items.map((item, idx) => (
-                    <div key={idx} className="text-sm flex justify-between bg-gray-700 bg-opacity-30 p-2 rounded">
-                      <span className="text-gray-200">{item.name}</span>
-                      <span className="text-gray-400 font-semibold">x{item.quantity}</span>
-                    </div>
-                  ))}
-                </div>
-
-                {order.notes && (
-                  <div className="bg-yellow-900 bg-opacity-30 border-l-4 border-yellow-500 rounded p-3 mb-4">
-                    <p className="text-xs text-yellow-100">
-                      <strong>Notas:</strong> {order.notes}
-                    </p>
-                  </div>
-                )}
-
-                <button 
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    markAsReady(order.id);
-                  }}
-                  className="w-full bg-green-600 hover:bg-green-700 text-white py-2.5 rounded-lg transition-all hover:shadow-lg text-sm font-medium flex items-center justify-center gap-2"
-                >
-                  <CheckCircle size={16} />
-                  Finalizar pedido
-                </button>
+                <span className="mono" style={{ fontSize: 20, fontWeight: 700, color }}>{count}</span>
               </div>
             ))}
           </div>
 
-          {orders.length === 0 && (
-            <div className="text-center py-16 text-gray-400">
-              <p className="text-2xl font-semibold">No hay órdenes activas</p>
-              <p className="text-sm mt-2">Las nuevas órdenes aparecerán aquí cuando se envíen desde Mesas</p>
+          {/* ─── Grid de órdenes ─── */}
+          {orders.length === 0 ? (
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: 280, gap: 14 }}>
+              <div style={{
+                width: 64, height: 64, borderRadius: 18,
+                background: t.card, border: `1px solid ${t.border}`,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}>
+                <ChefHat size={28} color={t.textDim} />
+              </div>
+              <div style={{ textAlign: 'center' }}>
+                <div style={{ fontSize: 18, fontWeight: 700, color: t.textMuted, marginBottom: 4 }}>No hay órdenes activas</div>
+                <div style={{ fontSize: 13, color: t.textDim }}>Las nuevas órdenes aparecerán aquí desde Mesas</div>
+              </div>
+            </div>
+          ) : (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 16 }}>
+              {orders.map(order => {
+                const cfg = STATUS[order.status] || STATUS['entrante'];
+                const isActive = selectedOrder?.id === order.id && drawerOpen;
+                const isUrgent = order.status === 'muy-tarde';
+                return (
+                  <div
+                    key={order.id}
+                    className={`order-card ${isActive ? 'active' : ''} ${isUrgent ? 'status-muy-tarde' : ''}`}
+                    onClick={() => openOrder(order)}
+                  >
+                    {/* Color bar superior */}
+                    <div style={{ height: 3, background: cfg.color, opacity: 0.7 }} />
+
+                    <div style={{ padding: '16px 16px 14px' }}>
+                      {/* Top row */}
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 14 }}>
+                        <div>
+                          <div style={{ fontSize: 17, fontWeight: 800, color: t.text, marginBottom: 2 }}>{order.table}</div>
+                          <div className="mono" style={{ fontSize: 10, color: t.textDim }}>#{order.id}</div>
+                        </div>
+                        <StatusPill status={order.status} />
+                      </div>
+
+                      {/* Meta */}
+                      <div style={{ display: 'flex', gap: 14, marginBottom: 14 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12, color: t.textMuted }}>
+                          <Clock size={12} />
+                          <span className="mono" style={{ fontWeight: 600, color: order.status === 'muy-tarde' ? t.danger : order.status === 'tardando' ? t.gold : t.text }}>
+                            {formatTime(order.time)}
+                          </span>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12, color: t.textMuted }}>
+                          <Users size={12} />
+                          <span>{order.guests} items</span>
+                        </div>
+                      </div>
+
+                      {/* Items */}
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 5, marginBottom: order.notes ? 10 : 14 }}>
+                        {order.items.slice(0, 3).map((item, idx) => (
+                          <div key={idx} className="item-row" style={{
+                            display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                            background: t.surface, borderRadius: 8, padding: '7px 10px',
+                            border: `1px solid ${t.border}`,
+                          }}>
+                            <span style={{ fontSize: 12, color: t.text, fontWeight: 500 }}>{item.name}</span>
+                            <span className="mono" style={{ fontSize: 11, fontWeight: 700, color: t.textMuted }}>x{item.quantity}</span>
+                          </div>
+                        ))}
+                        {order.items.length > 3 && (
+                          <div style={{ fontSize: 11, color: t.textDim, textAlign: 'center', paddingTop: 2 }}>
+                            +{order.items.length - 3} más...
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Nota */}
+                      {order.notes && (
+                        <div style={{
+                          background: `${t.gold}10`, border: `1px solid ${t.gold}25`,
+                          borderLeft: `2px solid ${t.gold}`, borderRadius: '0 8px 8px 0',
+                          padding: '7px 10px', marginBottom: 12, fontSize: 11, color: t.gold,
+                        }}>
+                          📝 {order.notes}
+                        </div>
+                      )}
+
+                      {/* Botón */}
+                      <button
+                        className="btn-p"
+                        onClick={e => { e.stopPropagation(); markAsReady(order.id); }}
+                        style={{
+                          width: '100%', padding: '10px', background: t.accent, border: 'none',
+                          borderRadius: 10, color: '#fff', fontWeight: 700, fontSize: 12,
+                          fontFamily: 'Sora, sans-serif',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                        }}
+                      >
+                        <CheckCircle size={14} /> Finalizar pedido
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>
-      </div>
 
-      {selectedTable && (
-        <>
-          <div 
-            className="fixed inset-0 bg-black bg-opacity-60 z-40"
-            onClick={() => setSelectedTable(null)}
-          />
-          
-          <div className="fixed right-0 top-0 h-full w-full md:w-[500px] bg-gradient-to-br from-gray-800 via-gray-900 to-black shadow-2xl overflow-y-auto transform transition-transform z-50 border-l-4 border-blue-500">
-            <div className="p-6">
-              <button
-                onClick={() => setSelectedTable(null)}
-                className="absolute top-6 right-6 text-gray-400 hover:text-white hover:bg-gray-700 rounded-full p-2 transition-all hover:rotate-90 duration-300"
-              >
-                <X size={24} />
-              </button>
-              
-              <div className="mb-6">
-                <h2 className="text-3xl font-bold mb-1">{selectedTable.table}</h2>
-                <p className="text-gray-400">Orden #{selectedTable.id}</p>
-              </div>
+        {/* ─── Backdrop ─── */}
+        {drawerOpen && (
+          <div className="backdrop" onClick={closeDrawer} />
+        )}
 
-              <div className="mb-6">
-                <div className={`inline-block px-5 py-2 rounded-full text-sm font-semibold ${getStatusColor(selectedTable.status)} shadow-lg`}>
-                  {getStatusText(selectedTable.status)}
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4 mb-6 bg-gray-700 bg-opacity-30 rounded-xl p-5">
-                <div className="flex items-center gap-3 text-gray-300">
-                  <div className="bg-blue-500 bg-opacity-20 p-3 rounded-lg">
-                    <Clock size={20} className="text-blue-400" />
-                  </div>
-                  <div>
-                    <p className="text-xs text-gray-500">Tiempo transcurrido</p>
-                    <p className="font-bold text-lg">{formatTime(selectedTable.time)}</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3 text-gray-300">
-                  <div className="bg-purple-500 bg-opacity-20 p-3 rounded-lg">
-                    <Users size={20} className="text-purple-400" />
-                  </div>
-                  <div>
-                    <p className="text-xs text-gray-500">Items</p>
-                    <p className="font-bold text-lg">{selectedTable.guests}</p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="mb-6">
-                <h3 className="text-xl font-semibold mb-4">Items del pedido</h3>
-                <div className="bg-gray-700 bg-opacity-30 rounded-xl p-4 space-y-3">
-                  {selectedTable.items.map((item, idx) => (
-                    <div key={idx} className="flex justify-between items-center py-3 border-b border-gray-600 last:border-0">
-                      <div className="flex-1">
-                        <span className="font-medium text-lg">{item.name}</span>
-                        {item.notes && (
-                          <p className="text-xs text-yellow-400 mt-1">📝 {item.notes}</p>
-                        )}
-                      </div>
-                      <span className="text-gray-400 font-bold bg-gray-700 px-3 py-1 rounded-full">x{item.quantity}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {selectedTable.notes && (
-                <div className="mb-6">
-                  <h3 className="text-xl font-semibold mb-3">Notas especiales</h3>
-                  <div className="bg-yellow-900 bg-opacity-30 border-l-4 border-yellow-500 rounded-lg p-4">
-                    <p className="text-sm text-yellow-100 leading-relaxed">{selectedTable.notes}</p>
-                  </div>
-                </div>
-              )}
-
-              <div className="space-y-3">
-                <button 
-                  onClick={() => markAsReady(selectedTable.id)}
-                  className="w-full bg-green-600 hover:bg-green-700 text-white py-4 rounded-xl transition-all hover:shadow-lg font-medium text-lg flex items-center justify-center gap-2"
+        {/* ─── Drawer lateral ─── */}
+        <div className={`drawer ${drawerOpen ? 'open' : ''}`}>
+          {selectedOrder && (() => {
+            const cfg = STATUS[selectedOrder.status] || STATUS['entrante'];
+            return (
+              <div style={{ padding: '28px 26px' }}>
+                {/* Close */}
+                <button
+                  onClick={closeDrawer}
+                  style={{
+                    position: 'absolute', top: 20, right: 20,
+                    width: 32, height: 32, borderRadius: 9,
+                    background: t.card, border: `1px solid ${t.border}`,
+                    color: t.textMuted, cursor: 'pointer',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    transition: 'all 0.15s',
+                  }}
                 >
-                  <CheckCircle size={22} />
-                  Finalizar pedido
+                  <X size={15} />
+                </button>
+
+                {/* Header */}
+                <div style={{ marginBottom: 22 }}>
+                  <div style={{ fontSize: 10, color: t.textMuted, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: 6 }}>
+                    Orden #{selectedOrder.id}
+                  </div>
+                  <h2 style={{ fontSize: 26, fontWeight: 800, color: t.text, letterSpacing: '-0.5px', marginBottom: 8 }}>
+                    {selectedOrder.table}
+                  </h2>
+                  <StatusPill status={selectedOrder.status} />
+                </div>
+
+                {/* Meta cards */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 22 }}>
+                  <div style={{
+                    background: t.card, border: `1px solid ${t.border}`, borderRadius: 12, padding: '14px',
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                      <div style={{
+                        width: 30, height: 30, borderRadius: 8,
+                        background: `${t.info}18`, border: `1px solid ${t.info}25`,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      }}>
+                        <Clock size={14} color={t.info} />
+                      </div>
+                      <span style={{ fontSize: 11, color: t.textMuted }}>Tiempo</span>
+                    </div>
+                    <div className="mono" style={{
+                      fontSize: 20, fontWeight: 700,
+                      color: selectedOrder.status === 'muy-tarde' ? t.danger : selectedOrder.status === 'tardando' ? t.gold : t.text,
+                    }}>
+                      {formatTime(selectedOrder.time)}
+                    </div>
+                  </div>
+                  <div style={{
+                    background: t.card, border: `1px solid ${t.border}`, borderRadius: 12, padding: '14px',
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                      <div style={{
+                        width: 30, height: 30, borderRadius: 8,
+                        background: `${t.purple}18`, border: `1px solid ${t.purple}25`,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      }}>
+                        <Users size={14} color={t.purple} />
+                      </div>
+                      <span style={{ fontSize: 11, color: t.textMuted }}>Items</span>
+                    </div>
+                    <div className="mono" style={{ fontSize: 20, fontWeight: 700, color: t.text }}>
+                      {selectedOrder.guests}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Items */}
+                <div style={{ marginBottom: 20 }}>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: t.textMuted, textTransform: 'uppercase', letterSpacing: '0.6px', marginBottom: 12 }}>
+                    Items del pedido
+                  </div>
+                  <div style={{
+                    background: t.card, border: `1px solid ${t.border}`,
+                    borderRadius: 14, overflow: 'hidden',
+                  }}>
+                    {selectedOrder.items.map((item, idx) => (
+                      <div key={idx} style={{
+                        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                        padding: '13px 16px',
+                        borderBottom: idx < selectedOrder.items.length - 1 ? `1px solid ${t.border}` : 'none',
+                      }}>
+                        <div>
+                          <div style={{ fontSize: 14, fontWeight: 600, color: t.text }}>{item.name}</div>
+                          {item.notes && (
+                            <div style={{ fontSize: 11, color: t.gold, marginTop: 2 }}>📝 {item.notes}</div>
+                          )}
+                        </div>
+                        <div className="mono" style={{
+                          fontSize: 14, fontWeight: 700,
+                          background: `${t.accent}15`, color: t.accent,
+                          border: `1px solid ${t.accent}25`,
+                          borderRadius: 8, padding: '3px 10px',
+                        }}>
+                          ×{item.quantity}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Notas especiales */}
+                {selectedOrder.notes && (
+                  <div style={{ marginBottom: 20 }}>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: t.textMuted, textTransform: 'uppercase', letterSpacing: '0.6px', marginBottom: 10 }}>
+                      Notas especiales
+                    </div>
+                    <div style={{
+                      background: `${t.gold}10`, border: `1px solid ${t.gold}25`,
+                      borderLeft: `3px solid ${t.gold}`, borderRadius: '0 12px 12px 0',
+                      padding: '14px 16px', fontSize: 13, color: t.gold, lineHeight: 1.5,
+                    }}>
+                      {selectedOrder.notes}
+                    </div>
+                  </div>
+                )}
+
+                {/* Finalizar */}
+                <button
+                  className="btn-p"
+                  onClick={() => markAsReady(selectedOrder.id)}
+                  style={{
+                    width: '100%', padding: '15px', background: t.accent, border: 'none',
+                    borderRadius: 12, color: '#fff', fontWeight: 700, fontSize: 15,
+                    fontFamily: 'Sora, sans-serif',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                  }}
+                >
+                  <CheckCircle size={18} /> Finalizar pedido
                 </button>
               </div>
-            </div>
-          </div>
-        </>
-      )}
-    </div>
+            );
+          })()}
+        </div>
+      </div>
+    </>
   );
 };
 

@@ -1,42 +1,176 @@
 import React, { useState } from 'react';
-import { Plus, Trash2, Upload, Image, Save, X, Clock, UserCheck, Settings, FileText, Award, AlertTriangle } from 'lucide-react';
+import {
+  Plus, Trash2, Upload, Image, Save, X, Clock,
+  UserCheck, Settings, FileText, Award, AlertTriangle,
+  Edit, Tag,
+} from 'lucide-react';
 import Sidebar from '../../components/Sidebar';
 
-// Modal de Confirmación
-function ConfirmModal({ isOpen, onConfirm, onCancel, professional }) {
-  if (!isOpen) return null;
+/* ─── Paleta unificada ─── */
+const t = {
+  bg: '#0a0d12', surface: '#111720', card: '#161d28',
+  border: '#1e2d3d', borderLight: '#243447',
+  accent: '#10b981', accentMuted: '#064e3b',
+  text: '#e2e8f0', textMuted: '#64748b', textDim: '#334155',
+  danger: '#ef4444', gold: '#f59e0b', purple: '#8b5cf6', info: '#38bdf8',
+};
 
+const STYLES = `
+  @import url('https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  .pf-root * { font-family: 'Sora', sans-serif; }
+  .mono { font-family: 'JetBrains Mono', monospace !important; }
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: ${t.border}; border-radius: 2px; }
+
+  /* Pro cards */
+  .pro-card {
+    background: ${t.card}; border: 1px solid ${t.border};
+    border-radius: 16px; padding: 16px; cursor: pointer;
+    transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+    position: relative;
+  }
+  .pro-card:hover { transform: translateY(-2px); border-color: ${t.borderLight}; box-shadow: 0 8px 24px rgba(0,0,0,0.3); }
+  .pro-card.active { border-color: ${t.accent}; box-shadow: 0 0 0 1px ${t.accent}30, 0 8px 24px rgba(16,185,129,0.12); }
+  .pro-card .del-btn { opacity: 0; transition: opacity 0.15s; }
+  .pro-card:hover .del-btn { opacity: 1; }
+
+  /* Inputs */
+  .pf-input, .pf-select, .pf-textarea {
+    width: 100%; background: ${t.surface}; border: 1px solid ${t.border};
+    border-radius: 10px; padding: 11px 14px;
+    color: ${t.text}; font-family: 'Sora', sans-serif; font-size: 13px;
+    outline: none; transition: border-color 0.15s, background 0.15s;
+  }
+  .pf-input::placeholder, .pf-textarea::placeholder { color: ${t.textMuted}; }
+  .pf-input:focus, .pf-select:focus, .pf-textarea:focus { border-color: ${t.accent}; background: ${t.accent}08; }
+  .pf-select { cursor: pointer; appearance: none; }
+  .pf-select option { background: ${t.card}; }
+  .pf-textarea { resize: none; }
+
+  /* Buttons */
+  .btn-p { transition: all 0.15s ease; cursor: pointer; border: none; }
+  .btn-p:hover { filter: brightness(1.1); transform: translateY(-1px); }
+  .btn-p:active { transform: translateY(0); }
+  .btn-g { transition: all 0.15s ease; cursor: pointer; }
+  .btn-g:hover { border-color: ${t.borderLight} !important; background: ${t.border}40 !important; }
+
+  /* Upload zone */
+  .upload-zone {
+    border: 2px dashed ${t.border}; border-radius: 12px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    cursor: pointer; transition: border-color 0.2s, background 0.2s;
+    padding: 24px;
+  }
+  .upload-zone:hover { border-color: ${t.accent}; background: ${t.accent}08; }
+
+  /* Stat cards */
+  .stat-c { transition: transform 0.2s ease; }
+  .stat-c:hover { transform: translateY(-2px); }
+
+  /* Modal */
+  .modal-bd { animation: bdIn 0.18s ease; }
+  @keyframes bdIn { from{opacity:0}to{opacity:1} }
+  .modal-box { animation: mbIn 0.25s cubic-bezier(0.34,1.56,0.64,1); }
+  @keyframes mbIn { from{opacity:0;transform:scale(0.92)}to{opacity:1;transform:scale(1)} }
+
+  /* Detail panel fade */
+  .detail-in { animation: dtIn 0.2s ease; }
+  @keyframes dtIn { from{opacity:0;transform:translateX(8px)}to{opacity:1;transform:translateX(0)} }
+`;
+
+/* ─── Status pill ─── */
+const STATE_COLORS = {
+  'Activo':     { color: t.accent, bg: `${t.accent}18`, border: `${t.accent}35` },
+  'Inactivo':   { color: t.textMuted, bg: `${t.textMuted}12`, border: `${t.textMuted}25` },
+  'Vacaciones': { color: t.gold, bg: `${t.gold}15`, border: `${t.gold}30` },
+};
+
+function StatePill({ state }) {
+  const cfg = STATE_COLORS[state] || STATE_COLORS['Inactivo'];
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 backdrop-blur-sm">
-      <div className="bg-gradient-to-br from-gray-800 to-gray-900 rounded-2xl shadow-2xl p-8 max-w-md w-full mx-4 border border-gray-700 animate-in">
-        <div className="flex items-center justify-center w-16 h-16 bg-red-500 bg-opacity-20 rounded-full mx-auto mb-4">
-          <AlertTriangle className="text-red-500" size={32} />
+    <span style={{
+      display: 'inline-flex', alignItems: 'center', gap: 5,
+      background: cfg.bg, color: cfg.color, border: `1px solid ${cfg.border}`,
+      borderRadius: 20, padding: '2px 9px', fontSize: 10, fontWeight: 700,
+    }}>
+      <span style={{ width: 5, height: 5, borderRadius: '50%', background: cfg.color }} />
+      {state}
+    </span>
+  );
+}
+
+/* ─── Label ─── */
+const Label = ({ children }) => (
+  <div style={{ fontSize: 10, fontWeight: 700, color: t.textMuted, textTransform: 'uppercase', letterSpacing: '0.6px', marginBottom: 7 }}>
+    {children}
+  </div>
+);
+
+/* ─── StatCard ─── */
+function StatCard({ icon: Icon, label, value, color }) {
+  return (
+    <div className="stat-c" style={{
+      background: t.card, border: `1px solid ${t.border}`,
+      borderRadius: 14, padding: '18px 20px',
+      display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+    }}>
+      <div>
+        <div style={{ fontSize: 10, fontWeight: 700, color: t.textMuted, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 6 }}>{label}</div>
+        <div className="mono" style={{ fontSize: 26, fontWeight: 700, color }}>{value}</div>
+      </div>
+      <div style={{
+        width: 40, height: 40, borderRadius: 11,
+        background: `${color}15`, border: `1px solid ${color}25`,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+      }}>
+        <Icon size={18} color={color} />
+      </div>
+    </div>
+  );
+}
+
+/* ─── Confirm Modal ─── */
+function ConfirmModal({ isOpen, professional, onConfirm, onCancel }) {
+  if (!isOpen) return null;
+  return (
+    <div className="modal-bd" style={{
+      position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)',
+      backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+      zIndex: 100, padding: 16,
+    }}>
+      <div className="modal-box" style={{
+        background: t.card, border: `1px solid ${t.border}`,
+        borderRadius: 20, padding: 32, maxWidth: 380, width: '100%',
+      }}>
+        <div style={{
+          width: 52, height: 52, borderRadius: '50%',
+          background: `${t.danger}15`, border: `1px solid ${t.danger}30`,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          margin: '0 auto 18px',
+        }}>
+          <AlertTriangle size={24} color={t.danger} />
         </div>
-        
-        <h3 className="text-2xl font-bold text-white text-center mb-2">
+
+        <h3 style={{ fontSize: 20, fontWeight: 800, color: t.text, textAlign: 'center', marginBottom: 10 }}>
           ¿Eliminar profesional?
         </h3>
-        
-        <p className="text-gray-400 text-center mb-6">
-          ¿Estás seguro que deseas eliminar a{' '}
-          <span className="text-white font-semibold">
-            {professional?.name || 'este profesional'}
-          </span>
-          ? Esta acción no se puede deshacer.
+        <p style={{ fontSize: 13, color: t.textMuted, textAlign: 'center', marginBottom: 24, lineHeight: 1.5 }}>
+          Se eliminará a <strong style={{ color: t.text }}>{professional?.name || 'este profesional'}</strong>. Esta acción no se puede deshacer.
         </p>
 
-        <div className="flex gap-3">
-          <button
-            onClick={onCancel}
-            className="flex-1 bg-gray-700 hover:bg-gray-600 text-white py-3 rounded-xl font-semibold transition-all"
-          >
-            Cancelar
-          </button>
-          <button
-            onClick={onConfirm}
-            className="flex-1 bg-red-600 hover:bg-red-700 text-white py-3 rounded-xl font-semibold transition-all shadow-lg hover:shadow-xl"
-          >
-            Eliminar
+        <div style={{ display: 'flex', gap: 10 }}>
+          <button onClick={onCancel} className="btn-g" style={{
+            flex: 1, padding: '12px', background: t.surface, border: `1px solid ${t.border}`,
+            borderRadius: 10, color: t.textMuted, fontFamily: 'Sora, sans-serif', fontSize: 13, fontWeight: 600,
+          }}>Cancelar</button>
+          <button onClick={onConfirm} className="btn-p" style={{
+            flex: 1, padding: '12px', background: `${t.danger}20`, border: `1px solid ${t.danger}40`,
+            borderRadius: 10, color: t.danger, fontFamily: 'Sora, sans-serif', fontSize: 13, fontWeight: 700,
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+          }}>
+            <Trash2 size={14} /> Eliminar
           </button>
         </div>
       </div>
@@ -44,441 +178,388 @@ function ConfirmModal({ isOpen, onConfirm, onCancel, professional }) {
   );
 }
 
-export default function ServiceConfigStyle4() {
+/* ─── COMPONENTE PRINCIPAL ─── */
+export default function Professionals() {
   const [professionals, setProfessionals] = useState([
-    { id: 1, photo: null, name: 'Juan Pérez', specialty: 'Barbero Senior', state: 'Activo', services: '', schedule: '' },
-    { id: 2, photo: null, name: 'María García', specialty: 'Estilista', state: 'Activo', services: '', schedule: '' }
+    { id: 1, photo: null, name: 'Juan Pérez',    specialty: 'Barbero Senior', state: 'Activo',    services: '', schedule: '' },
+    { id: 2, photo: null, name: 'María García',  specialty: 'Estilista',      state: 'Activo',    services: '', schedule: '' },
+    { id: 3, photo: null, name: 'Laura Díaz',    specialty: 'Colorista',      state: 'Vacaciones',services: '', schedule: '' },
   ]);
-  
-  const [selectedProfessional, setSelectedProfessional] = useState(null);
+
+  const [selected,     setSelected]     = useState(null);
   const [confirmModal, setConfirmModal] = useState({ isOpen: false, professional: null });
 
   const addProfessional = () => {
-    const newProfessional = { 
-      id: Date.now(), 
-      photo: null, 
-      name: `Profesional ${professionals.length + 1}`, 
-      specialty: '',
-      state: 'Activo',
-      services: '',
-      schedule: ''
+    const np = {
+      id: Date.now(), photo: null,
+      name: `Profesional ${professionals.length + 1}`,
+      specialty: '', state: 'Activo', services: '', schedule: '',
     };
-    setProfessionals([...professionals, newProfessional]);
-    setSelectedProfessional(newProfessional);
+    setProfessionals([...professionals, np]);
+    setSelected(np);
   };
 
   const removeProfessional = () => {
     const id = confirmModal.professional?.id;
     if (professionals.length > 1 && id) {
       setProfessionals(professionals.filter(p => p.id !== id));
-      if (selectedProfessional?.id === id) {
-        setSelectedProfessional(null);
-      }
+      if (selected?.id === id) setSelected(null);
     }
     setConfirmModal({ isOpen: false, professional: null });
   };
 
-  const handleDeleteClick = (e, professional) => {
-    e.stopPropagation();
-    setConfirmModal({ isOpen: true, professional });
-  };
-
-  const handleInputChange = (e) => {
+  const handleInput = (e) => {
     const { name, value } = e.target;
-    if (selectedProfessional) {
-      const updatedProfessional = { ...selectedProfessional, [name]: value };
-      setSelectedProfessional(updatedProfessional);
-      setProfessionals(professionals.map(p => 
-        p.id === selectedProfessional.id ? updatedProfessional : p
-      ));
-    }
+    if (!selected) return;
+    const updated = { ...selected, [name]: value };
+    setSelected(updated);
+    setProfessionals(professionals.map(p => p.id === selected.id ? updated : p));
   };
 
-  const handlePhotoUpload = (file) => {
-    if (file && selectedProfessional) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const updatedProfessional = { ...selectedProfessional, photo: reader.result };
-        setSelectedProfessional(updatedProfessional);
-        setProfessionals(professionals.map(p => 
-          p.id === selectedProfessional.id ? updatedProfessional : p
-        ));
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  const handleCardPhotoUpload = (professional, file) => {
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const updatedProfessionals = professionals.map(p => 
-          p.id === professional.id ? { ...p, photo: reader.result } : p
-        );
-        setProfessionals(updatedProfessionals);
-        if (selectedProfessional?.id === professional.id) {
-          setSelectedProfessional({ ...professional, photo: reader.result });
-        }
-      };
-      reader.readAsDataURL(file);
-    }
+  const handlePhoto = (file, profId = null) => {
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const id = profId ?? selected?.id;
+      const updatedList = professionals.map(p => p.id === id ? { ...p, photo: reader.result } : p);
+      setProfessionals(updatedList);
+      if (selected?.id === id) setSelected({ ...selected, photo: reader.result });
+    };
+    reader.readAsDataURL(file);
   };
 
   const removePhoto = () => {
-    if (selectedProfessional) {
-      const updatedProfessional = { ...selectedProfessional, photo: null };
-      setSelectedProfessional(updatedProfessional);
-      setProfessionals(professionals.map(p => 
-        p.id === selectedProfessional.id ? updatedProfessional : p
-      ));
-    }
-  };
-
-  const handleSelectProfessional = (professional) => {
-    setSelectedProfessional(professional);
+    if (!selected) return;
+    const updated = { ...selected, photo: null };
+    setSelected(updated);
+    setProfessionals(professionals.map(p => p.id === selected.id ? updated : p));
   };
 
   const handleSave = () => {
-    if (!selectedProfessional) {
-      alert('⚠️ Selecciona un profesional para guardar');
-      return;
-    }
-    
-    if (!selectedProfessional.name.trim()) {
-      alert('⚠️ El nombre del profesional es requerido');
-      return;
-    }
-    
-    console.log('Guardando configuración:', professionals);
-    alert('✅ Configuración guardada exitosamente');
+    if (!selected) return;
+    if (!selected.name.trim()) { alert('El nombre es requerido'); return; }
+    console.log('Guardando:', professionals);
+    alert('✅ Configuración guardada');
   };
 
-  const handleCancel = () => {
-    setSelectedProfessional(null);
-  };
+  const stats = [
+    { label: 'Total',      value: professionals.length,                                         color: t.info,   Icon: UserCheck },
+    { label: 'Activos',    value: professionals.filter(p => p.state === 'Activo').length,        color: t.accent, Icon: Award     },
+    { label: 'Con foto',   value: professionals.filter(p => p.photo).length,                    color: t.purple, Icon: Image     },
+  ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-gray-900 to-slate-800">
-      <div className="flex h-screen">
+    <>
+      <style>{STYLES}</style>
+
+      <div className="pf-root" style={{ display: 'flex', height: '100vh', background: t.bg }}>
         <Sidebar />
 
-        {/* Contenido principal */}
-        <div className="flex-1 overflow-auto p-8">
-          <div className="max-w-8xl mx-auto">
-            {/* Header */}
-            <div className="mb-8">
-              <h1 className="text-4xl font-bold text-white mb-2">Configuración / Profesionales</h1>
-              <p className="text-gray-400">Administra y personaliza los profesionales de tu negocio</p>
+        <div style={{ flex: 1, overflowY: 'auto', padding: '28px 32px' }}>
+
+          {/* Header */}
+          <div style={{
+            background: t.surface, border: `1px solid ${t.border}`,
+            borderRadius: 18, padding: '22px 28px', marginBottom: 22,
+            display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+          }}>
+            <div>
+              <div style={{
+                display: 'inline-flex', alignItems: 'center', gap: 5,
+                background: `${t.accent}15`, border: `1px solid ${t.accent}30`,
+                borderRadius: 20, padding: '3px 11px',
+                fontSize: 10, color: t.accent, fontWeight: 700, letterSpacing: '0.8px',
+                textTransform: 'uppercase', marginBottom: 8,
+              }}>
+                <Settings size={10} /> Configuración
+              </div>
+              <h1 style={{ fontSize: 26, fontWeight: 800, color: t.text, letterSpacing: '-0.5px', marginBottom: 3 }}>
+                Profesionales
+              </h1>
+              <p style={{ fontSize: 13, color: t.textMuted }}>Administrá y personalizá el equipo de tu negocio</p>
             </div>
 
-            {/* Stats cards */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-              <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl p-6 shadow-lg">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-blue-100 text-sm">Total Profesionales</p>
-                    <p className="text-white text-3xl font-bold mt-1">{professionals.length}</p>
-                  </div>
-                  <UserCheck className="text-blue-200" size={40} />
-                </div>
-              </div>
-              <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-xl p-6 shadow-lg">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-green-100 text-sm">Activos</p>
-                    <p className="text-white text-3xl font-bold mt-1">
-                      {professionals.filter(p => p.state === 'Activo').length}
-                    </p>
-                  </div>
-                  <Award className="text-green-200" size={40} />
-                </div>
-              </div>
-              <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl p-6 shadow-lg">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-purple-100 text-sm">Con Foto</p>
-                    <p className="text-white text-3xl font-bold mt-1">
-                      {professionals.filter(p => p.photo).length}
-                    </p>
-                  </div>
-                  <Settings className="text-purple-200" size={40} />
-                </div>
-              </div>
-            </div>
+            <button
+              className="btn-p"
+              onClick={addProfessional}
+              style={{
+                padding: '10px 20px', background: t.accent, border: 'none',
+                borderRadius: 10, color: '#fff', fontWeight: 700, fontSize: 13,
+                fontFamily: 'Sora, sans-serif',
+                display: 'flex', alignItems: 'center', gap: 8,
+              }}
+            >
+              <Plus size={15} /> Nuevo Profesional
+            </button>
+          </div>
 
-            {/* Main Content Card */}
-            <div className="bg-gradient-to-br from-gray-800 to-gray-900 rounded-2xl shadow-2xl overflow-hidden border border-gray-700">
-              <div className="grid grid-cols-12 gap-0">
-                {/* Panel central - Profesionales */}
-                <div className="col-span-7 p-8 border-r border-gray-700">
-                  <div className="flex justify-between items-center mb-6">
-                    <h2 className="text-2xl font-bold text-white flex items-center gap-2">
-                      <UserCheck size={24} className="text-blue-400" />
-                      Lista de Profesionales
-                    </h2>
+          {/* Stats */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14, marginBottom: 22 }}>
+            {stats.map(({ label, value, color, Icon }) => (
+              <StatCard key={label} icon={Icon} label={label} value={value} color={color} />
+            ))}
+          </div>
+
+          {/* Main panel */}
+          <div style={{
+            display: 'grid', gridTemplateColumns: '1fr 1.1fr', gap: 16,
+          }}>
+            {/* ─── Lista ─── */}
+            <div style={{
+              background: t.card, border: `1px solid ${t.border}`,
+              borderRadius: 18, padding: '22px 20px',
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 18 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <UserCheck size={15} color={t.accent} />
+                  <span style={{ fontSize: 14, fontWeight: 700, color: t.text }}>Lista de profesionales</span>
+                </div>
+                <span style={{ fontSize: 11, color: t.textDim }}>{professionals.length} en total</span>
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10, maxHeight: 560, overflowY: 'auto' }}>
+                {professionals.map((prof) => (
+                  <div
+                    key={prof.id}
+                    className={`pro-card ${selected?.id === prof.id ? 'active' : ''}`}
+                    onClick={() => setSelected(prof)}
+                  >
+                    {/* Delete btn */}
                     <button
-                      onClick={addProfessional}
-                      className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white px-4 py-2 rounded-lg transition-all shadow-lg hover:shadow-xl flex items-center gap-2"
+                      className="del-btn btn-p"
+                      onClick={(e) => { e.stopPropagation(); setConfirmModal({ isOpen: true, professional: prof }); }}
+                      style={{
+                        position: 'absolute', top: 10, right: 10,
+                        width: 28, height: 28, borderRadius: 8,
+                        background: `${t.danger}18`, border: `1px solid ${t.danger}30`,
+                        color: t.danger, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      }}
                     >
-                      <Plus size={18} />
-                      <span className="text-sm font-medium">Nuevo</span>
+                      <Trash2 size={13} />
+                    </button>
+
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+                      {/* Avatar / Foto */}
+                      <div style={{ flexShrink: 0 }}>
+                        {prof.photo ? (
+                          <label onClick={e => e.stopPropagation()} style={{ cursor: 'pointer', display: 'block' }}>
+                            <img src={prof.photo} alt={prof.name} style={{
+                              width: 52, height: 52, borderRadius: 12, objectFit: 'cover',
+                              border: `2px solid ${t.border}`,
+                            }} />
+                            <input type="file" accept="image/*" style={{ display: 'none' }}
+                              onChange={e => handlePhoto(e.target.files[0], prof.id)} />
+                          </label>
+                        ) : (
+                          <label onClick={e => e.stopPropagation()} style={{ cursor: 'pointer', display: 'block' }}>
+                            <div style={{
+                              width: 52, height: 52, borderRadius: 12,
+                              background: t.surface, border: `2px dashed ${t.border}`,
+                              display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            }}>
+                              <Image size={18} color={t.textDim} />
+                            </div>
+                            <input type="file" accept="image/*" style={{ display: 'none' }}
+                              onChange={e => handlePhoto(e.target.files[0], prof.id)} />
+                          </label>
+                        )}
+                      </div>
+
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: 14, fontWeight: 700, color: t.text, marginBottom: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {prof.name || 'Sin nombre'}
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
+                          <Tag size={10} color={t.textMuted} />
+                          <span style={{ fontSize: 11, color: t.textMuted, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                            {prof.specialty || 'Sin especialidad'}
+                          </span>
+                        </div>
+                        <StatePill state={prof.state} />
+                      </div>
+
+                      {selected?.id === prof.id && (
+                        <div style={{ color: t.accent, flexShrink: 0 }}>
+                          <Edit size={14} />
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+
+                {professionals.length === 0 && (
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '40px 20px', gap: 10 }}>
+                    <div style={{
+                      width: 52, height: 52, borderRadius: 14, background: t.surface,
+                      border: `1px solid ${t.border}`, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    }}>
+                      <UserCheck size={22} color={t.textDim} />
+                    </div>
+                    <span style={{ fontSize: 13, color: t.textMuted }}>No hay profesionales</span>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* ─── Panel de edición ─── */}
+            <div style={{
+              background: t.card, border: `1px solid ${t.border}`,
+              borderRadius: 18, padding: '22px 22px',
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 18 }}>
+                <FileText size={15} color={t.accent} />
+                <span style={{ fontSize: 14, fontWeight: 700, color: t.text }}>Detalles del profesional</span>
+              </div>
+
+              {!selected ? (
+                <div style={{
+                  display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                  height: 300, gap: 12,
+                }}>
+                  <div style={{
+                    width: 52, height: 52, borderRadius: 14, background: t.surface,
+                    border: `1px solid ${t.border}`, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  }}>
+                    <Edit size={20} color={t.textDim} />
+                  </div>
+                  <p style={{ fontSize: 13, color: t.textMuted, textAlign: 'center' }}>
+                    Seleccioná un profesional<br />para editar sus detalles
+                  </p>
+                </div>
+              ) : (
+                <div className="detail-in" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+
+                  {/* Info banner */}
+                  <div style={{
+                    background: `${t.accent}10`, border: `1px solid ${t.accent}25`,
+                    borderRadius: 10, padding: '10px 14px',
+                    fontSize: 12, color: t.accent, display: 'flex', alignItems: 'center', gap: 6,
+                  }}>
+                    <Edit size={12} />
+                    <span>Editando: <strong>{selected.name}</strong></span>
+                  </div>
+
+                  {/* Foto */}
+                  <div>
+                    <Label>Foto</Label>
+                    {selected.photo ? (
+                      <div style={{ position: 'relative' }}>
+                        <label style={{ cursor: 'pointer', display: 'block' }}>
+                          <img src={selected.photo} alt="Preview" style={{
+                            width: '100%', height: 150, objectFit: 'cover',
+                            borderRadius: 12, border: `1px solid ${t.border}`,
+                          }} />
+                          <input type="file" accept="image/*" style={{ display: 'none' }}
+                            onChange={e => handlePhoto(e.target.files[0])} />
+                        </label>
+                        <button onClick={removePhoto} style={{
+                          position: 'absolute', top: 8, right: 8,
+                          width: 28, height: 28, borderRadius: 8,
+                          background: `${t.danger}20`, border: `1px solid ${t.danger}35`,
+                          color: t.danger, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        }}>
+                          <X size={13} />
+                        </button>
+                      </div>
+                    ) : (
+                      <label className="upload-zone" style={{ height: 100 }}>
+                        <Upload size={22} color={t.textMuted} style={{ marginBottom: 6 }} />
+                        <span style={{ fontSize: 12, color: t.textMuted, fontWeight: 600 }}>Subir imagen</span>
+                        <span style={{ fontSize: 10, color: t.textDim, marginTop: 2 }}>PNG, JPG · máx 5MB</span>
+                        <input type="file" accept="image/*" style={{ display: 'none' }}
+                          onChange={e => handlePhoto(e.target.files[0])} />
+                      </label>
+                    )}
+                  </div>
+
+                  {/* Nombre */}
+                  <div>
+                    <Label>Nombre</Label>
+                    <input name="name" value={selected.name} onChange={handleInput}
+                      placeholder="Nombre del profesional" className="pf-input" />
+                  </div>
+
+                  {/* Especialidad */}
+                  <div>
+                    <Label>Especialidad</Label>
+                    <input name="specialty" value={selected.specialty} onChange={handleInput}
+                      placeholder="Ej: Barbero, Estilista, Colorista" className="pf-input" />
+                  </div>
+
+                  {/* Estado */}
+                  <div>
+                    <Label>Estado</Label>
+                    <div style={{ position: 'relative' }}>
+                      <select name="state" value={selected.state} onChange={handleInput} className="pf-select"
+                        style={{ paddingRight: 32 }}>
+                        <option>Activo</option>
+                        <option>Inactivo</option>
+                        <option>Vacaciones</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* Servicios */}
+                  <div>
+                    <Label>Servicios que realiza</Label>
+                    <textarea name="services" value={selected.services} onChange={handleInput} rows={2}
+                      placeholder="Ej: Corte, Peinado, Coloración..." className="pf-textarea" />
+                  </div>
+
+                  {/* Horarios */}
+                  <div>
+                    <Label>Horarios</Label>
+                    <div style={{ position: 'relative' }}>
+                      <Clock size={13} color={t.textMuted} style={{ position: 'absolute', left: 12, top: 13, pointerEvents: 'none' }} />
+                      <textarea name="schedule" value={selected.schedule} onChange={handleInput} rows={2}
+                        placeholder="Ej: Lunes a Viernes 9:00 - 18:00"
+                        className="pf-textarea" style={{ paddingLeft: 34 }} />
+                    </div>
+                  </div>
+
+                  {/* Acciones */}
+                  <div style={{ display: 'flex', gap: 10, paddingTop: 4 }}>
+                    <button onClick={() => setSelected(null)} className="btn-g" style={{
+                      flex: 1, padding: '12px', background: t.surface,
+                      border: `1px solid ${t.border}`, borderRadius: 10,
+                      color: t.textMuted, fontFamily: 'Sora, sans-serif', fontSize: 13, fontWeight: 600,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                    }}>
+                      <X size={14} /> Cancelar
+                    </button>
+                    <button onClick={handleSave} className="btn-p" style={{
+                      flex: 2, padding: '12px', background: t.accent, border: 'none',
+                      borderRadius: 10, color: '#fff', fontFamily: 'Sora, sans-serif',
+                      fontSize: 13, fontWeight: 700,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                    }}>
+                      <Save size={14} /> Guardar cambios
                     </button>
                   </div>
-
-                  {/* Grid de profesionales */}
-                  <div className="grid grid-cols-2 gap-4 max-h-[800px] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-gray-700 scrollbar-track-gray-800">
-                    {professionals.map((professional) => (
-                      <div 
-                        key={professional.id} 
-                        onClick={() => handleSelectProfessional(professional)}
-                        className={`bg-gradient-to-br from-gray-700 to-gray-800 rounded-xl p-4 relative group hover:shadow-xl transition-all cursor-pointer border-2 ${
-                          selectedProfessional?.id === professional.id ? 'border-blue-500 shadow-lg shadow-blue-500/20' : 'border-transparent'
-                        }`}
-                      >
-                        <button
-                          onClick={(e) => handleDeleteClick(e, professional)}
-                          className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity bg-red-500 text-white p-1.5 rounded-lg hover:bg-red-600 z-10"
-                          title="Eliminar profesional"
-                        >
-                          <Trash2 size={16} />
-                        </button>
-                        
-                        <div className="relative mb-3">
-                          {professional.photo ? (
-                            <label className="cursor-pointer block">
-                              <img 
-                                src={professional.photo} 
-                                alt="Preview" 
-                                className="w-full h-32 object-cover rounded-lg hover:opacity-80 transition-opacity"
-                              />
-                              <input
-                                type="file"
-                                accept="image/*"
-                                className="hidden"
-                                onClick={(e) => e.stopPropagation()}
-                                onChange={(e) => handleCardPhotoUpload(professional, e.target.files[0])}
-                              />
-                            </label>
-                          ) : (
-                            <label className="bg-gray-600 bg-opacity-30 border-2 border-dashed border-gray-500 rounded-lg h-32 flex flex-col items-center justify-center cursor-pointer hover:bg-gray-600 hover:bg-opacity-50 transition-all">
-                              <Image size={28} className="text-gray-400 mb-1" />
-                              <span className="text-xs text-gray-400">Añadir foto</span>
-                              
-                            </label>
-                          )}
-                        </div>
-
-                        <div className="space-y-2">
-                          <div className="text-white font-semibold text-sm truncate">
-                            {professional.name || 'Sin nombre'}
-                          </div>
-                          <div className="text-gray-400 text-xs truncate">
-                            {professional.specialty || 'Sin especialidad'}
-                          </div>
-                          <div className="flex items-center justify-start">
-                            <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                              professional.state === 'Activo' 
-                                ? 'bg-green-500 text-white' 
-                                : professional.state === 'Inactivo'
-                                ? 'bg-gray-600 text-gray-300'
-                                : 'bg-orange-500 text-white'
-                            }`}>
-                              {professional.state}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-
-                  {professionals.length === 0 && (
-                    <div className="text-center py-12 text-gray-400">
-                      <UserCheck size={48} className="mx-auto mb-4 opacity-30" />
-                      <p className="text-lg">No hay profesionales configurados</p>
-                      <p className="text-sm mt-2">Haz clic en "Nuevo" para agregar uno</p>
-                    </div>
-                  )}
                 </div>
-
-                {/* Panel derecho - Formulario detallado */}
-                <div className="col-span-5 bg-gradient-to-br from-gray-750 to-gray-850 p-8">
-                  <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
-                    <FileText size={20} className="text-blue-400" />
-                    Detalles del Profesional
-                  </h3>
-                  
-                  {selectedProfessional ? (
-                    <>
-                      <div className="bg-blue-900 bg-opacity-20 border border-blue-700 rounded-lg p-4 mb-6">
-                        <p className="text-blue-300 text-sm">
-                          <span className="font-semibold">Editando:</span> {selectedProfessional.name || 'Profesional sin nombre'}
-                        </p>
-                      </div>
-
-                      <div className="space-y-5">
-                        <div>
-                          <label className="block text-sm font-medium text-gray-300 mb-2">
-                            Foto de referencia
-                          </label>
-                          {selectedProfessional.photo ? (
-                            <div className="relative">
-                              <label className="cursor-pointer block">
-                                <img 
-                                  src={selectedProfessional.photo} 
-                                  alt="Preview" 
-                                  className="w-full h-40 object-cover rounded-xl hover:opacity-80 transition-opacity"
-                                />
-                                <input
-                                  type="file"
-                                  accept="image/*"
-                                  className="hidden"
-                                  onChange={(e) => handlePhotoUpload(e.target.files[0])}
-                                />
-                              </label>
-                              <button
-                                onClick={removePhoto}
-                                className="absolute top-2 right-2 bg-red-500 text-white p-2 rounded-lg hover:bg-red-600 transition-colors"
-                              >
-                                <X size={16} />
-                              </button>
-                            </div>
-                          ) : (
-                            <label className="w-full border-2 border-dashed border-gray-600 rounded-xl p-8 flex flex-col items-center justify-center cursor-pointer hover:border-blue-500 hover:bg-blue-900 hover:bg-opacity-10 transition-all">
-                              <Upload size={32} className="text-gray-400 mb-2" />
-                              <span className="text-sm text-gray-400">Haz clic para subir imagen</span>
-                              <span className="text-xs text-gray-500 mt-1">PNG, JPG hasta 5MB</span>
-                              <input
-                                type="file"
-                                accept="image/*"
-                                className="hidden"
-                                onChange={(e) => handlePhotoUpload(e.target.files[0])}
-                              />
-                            </label>
-                          )}
-                        </div>
-
-                        <div>
-                          <label className="block text-sm font-medium text-gray-300 mb-2">
-                            Nombre
-                          </label>
-                          <input
-                            type="text"
-                            name="name"
-                            value={selectedProfessional.name}
-                            onChange={handleInputChange}
-                            placeholder="Nombre del profesional"
-                            className="w-full px-4 py-3 bg-gray-700 bg-opacity-50 border border-gray-600 text-white rounded-xl focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 transition-all placeholder-gray-500"
-                          />
-                        </div>
-
-                        <div>
-                          <label className="block text-sm font-medium text-gray-300 mb-2">
-                            Especialidad
-                          </label>
-                          <input
-                            type="text"
-                            name="specialty"
-                            value={selectedProfessional.specialty}
-                            onChange={handleInputChange}
-                            placeholder="Ej: Barbero, Estilista, Colorista"
-                            className="w-full px-4 py-3 bg-gray-700 bg-opacity-50 border border-gray-600 text-white rounded-xl focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 transition-all placeholder-gray-500"
-                          />
-                        </div>
-
-                        <div>
-                          <label className="block text-sm font-medium text-gray-300 mb-2">
-                            Estado
-                          </label>
-                          <select
-                            name="state"
-                            value={selectedProfessional.state}
-                            onChange={handleInputChange}
-                            className="w-full px-4 py-3 bg-gray-700 bg-opacity-50 border border-gray-600 text-white rounded-xl focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 transition-all"
-                          >
-                            <option value="Activo">Activo</option>
-                            <option value="Inactivo">Inactivo</option>
-                            <option value="Vacaciones">Vacaciones</option>
-                          </select>
-                        </div>
-
-                        <div>
-                          <label className="block text-sm font-medium text-gray-300 mb-2">
-                            Servicios que realiza
-                          </label>
-                          <textarea
-                            name="services"
-                            value={selectedProfessional.services}
-                            onChange={handleInputChange}
-                            placeholder="Ej: Corte de cabello, Peinado, Coloración"
-                            rows="3"
-                            className="w-full px-4 py-3 bg-gray-700 bg-opacity-50 border border-gray-600 text-white rounded-xl focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 transition-all placeholder-gray-500 resize-none"
-                          />
-                        </div>
-
-                        <div>
-                          <label className="block text-sm font-medium text-gray-300 mb-2">
-                            Horarios
-                          </label>
-                          <div className="relative">
-                            <Clock className="absolute left-3 top-3 text-gray-400" size={18} />
-                            <textarea
-                              name="schedule"
-                              value={selectedProfessional.schedule}
-                              onChange={handleInputChange}
-                              placeholder="Ej: Lunes a Viernes 9:00 - 18:00"
-                              rows="2"
-                              className="w-full pl-10 pr-4 py-3 bg-gray-700 bg-opacity-50 border border-gray-600 text-white rounded-xl focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 transition-all placeholder-gray-500 resize-none"
-                            />
-                          </div>
-                        </div>
-
-                        {/* Botones de acción */}
-                        <div className="flex gap-3 pt-4">
-                          <button 
-                            onClick={handleSave}
-                            className="flex-1 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white py-3 rounded-xl font-semibold transition-all shadow-lg hover:shadow-xl flex items-center justify-center gap-2"
-                          >
-                            <Save size={20} />
-                            Guardar
-                          </button>
-                          <button 
-                            onClick={handleCancel}
-                            className="flex-1 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white py-3 rounded-xl font-semibold transition-all shadow-lg hover:shadow-xl flex items-center justify-center gap-2"
-                          >
-                            <X size={20} />
-                            Cancelar
-                          </button>
-                        </div>
-                      </div>
-                    </>
-                  ) : (
-                    <div className="bg-gray-700 bg-opacity-30 border border-gray-600 rounded-lg p-4 mb-6">
-                      <p className="text-gray-400 text-sm">
-                        Selecciona un profesional para editar sus detalles
-                      </p>
-                    </div>
-                  )}
-                </div>
-              </div>
+              )}
             </div>
+          </div>
 
-            {/* Nota informativa */}
-            <div className="mt-8 bg-gradient-to-r from-blue-900 to-blue-800 bg-opacity-30 border-l-4 border-blue-500 p-4 rounded-lg">
-              <p className="text-blue-200 text-sm">
-                <span className="font-semibold">💡 Consejo:</span> Haz clic en cualquier imagen para cambiarla. Asigna servicios y horarios específicos para cada profesional.
-              </p>
-            </div>
+          {/* Tip */}
+          <div style={{
+            marginTop: 18, background: `${t.info}08`, border: `1px solid ${t.info}20`,
+            borderLeft: `3px solid ${t.info}`, borderRadius: '0 10px 10px 0',
+            padding: '12px 16px',
+          }}>
+            <p style={{ fontSize: 12, color: t.info }}>
+              <strong>💡 Tip:</strong> Hacé clic en la foto de una card para cambiarla directamente. Asigná servicios y horarios para una mejor organización.
+            </p>
           </div>
         </div>
       </div>
 
-      {/* Modal de confirmación */}
       <ConfirmModal
         isOpen={confirmModal.isOpen}
         professional={confirmModal.professional}
         onConfirm={removeProfessional}
         onCancel={() => setConfirmModal({ isOpen: false, professional: null })}
       />
-    </div>
+    </>
   );
 }

@@ -1,48 +1,169 @@
 import React, { useState } from "react";
 import {
-  Plus,
-  Trash2,
-  Upload,
-  Image,
-  Save,
-  X,
-  DollarSign,
-  Clock,
-  UserCheck,
-  Settings,
-  FileText,
-  AlertTriangle,
+  Plus, Trash2, Upload, Image, Save, X, DollarSign,
+  Clock, UserCheck, Settings, FileText, AlertTriangle, Edit, Tag,
 } from "lucide-react";
 import Sidebar from "../../components/Sidebar";
 import { useNavigate } from "react-router-dom";
 
+/* ─── Paleta unificada ─── */
+const t = {
+  bg: '#0a0d12', surface: '#111720', card: '#161d28',
+  border: '#1e2d3d', borderLight: '#243447',
+  accent: '#10b981', accentMuted: '#064e3b',
+  text: '#e2e8f0', textMuted: '#64748b', textDim: '#334155',
+  danger: '#ef4444', gold: '#f59e0b', purple: '#8b5cf6', info: '#38bdf8',
+};
 
-// Modal de Confirmación
-function ConfirmModal({ isOpen, onConfirm, onCancel, title, message }) {
-  if (!isOpen) return null;
+const STYLES = `
+  @import url('https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  .sc-root * { font-family: 'Sora', sans-serif; }
+  .mono { font-family: 'JetBrains Mono', monospace !important; }
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: ${t.border}; border-radius: 2px; }
 
+  .svc-card {
+    background: ${t.card}; border: 1px solid ${t.border};
+    border-radius: 16px; overflow: hidden; cursor: pointer;
+    transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+    position: relative;
+  }
+  .svc-card:hover { transform: translateY(-2px); border-color: ${t.borderLight}; box-shadow: 0 8px 24px rgba(0,0,0,0.35); }
+  .svc-card.active { border-color: ${t.accent}; box-shadow: 0 0 0 1px ${t.accent}30, 0 8px 24px rgba(16,185,129,0.1); }
+  .svc-card .del-btn { opacity: 0; transition: opacity 0.15s; }
+  .svc-card:hover .del-btn { opacity: 1; }
+
+  .pf-input, .pf-select { 
+    width: 100%; background: ${t.surface}; border: 1px solid ${t.border};
+    border-radius: 10px; padding: 11px 14px;
+    color: ${t.text}; font-family: 'Sora', sans-serif; font-size: 13px;
+    outline: none; transition: border-color 0.15s, background 0.15s;
+  }
+  .pf-input::placeholder { color: ${t.textMuted}; }
+  .pf-input:focus, .pf-select:focus { border-color: ${t.accent}; background: ${t.accent}08; }
+  .pf-input:disabled { opacity: 0.4; cursor: not-allowed; }
+  .pf-select { cursor: pointer; appearance: none; }
+  .pf-select option { background: ${t.card}; }
+  input[type=number]::-webkit-inner-spin-button { display: none; }
+
+  .btn-p { transition: all 0.15s ease; cursor: pointer; border: none; }
+  .btn-p:hover:not(:disabled) { filter: brightness(1.1); transform: translateY(-1px); }
+  .btn-p:active { transform: translateY(0); }
+  .btn-p:disabled { opacity: 0.4; cursor: not-allowed; }
+  .btn-g { transition: all 0.15s ease; cursor: pointer; }
+  .btn-g:hover { border-color: ${t.borderLight} !important; }
+
+  .upload-zone {
+    border: 2px dashed ${t.border}; border-radius: 12px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    cursor: pointer; transition: border-color 0.2s, background 0.2s; padding: 20px;
+  }
+  .upload-zone:hover { border-color: ${t.accent}; background: ${t.accent}06; }
+  .upload-zone.disabled { opacity: 0.4; cursor: not-allowed; pointer-events: none; }
+
+  /* Toggle switch */
+  .toggle-track {
+    width: 40px; height: 22px; border-radius: 11px; position: relative;
+    transition: background 0.2s ease; cursor: pointer; flex-shrink: 0;
+  }
+  .toggle-thumb {
+    position: absolute; top: 3px; left: 3px;
+    width: 16px; height: 16px; border-radius: 50%; background: #fff;
+    transition: transform 0.2s ease; box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+  }
+
+  .stat-c { transition: transform 0.2s ease; }
+  .stat-c:hover { transform: translateY(-2px); }
+
+  .modal-bd { animation: bdIn 0.18s ease; }
+  @keyframes bdIn { from{opacity:0}to{opacity:1} }
+  .modal-box { animation: mbIn 0.25s cubic-bezier(0.34,1.56,0.64,1); }
+  @keyframes mbIn { from{opacity:0;transform:scale(0.92)}to{opacity:1;transform:scale(1)} }
+  .detail-in { animation: dtIn 0.2s ease; }
+  @keyframes dtIn { from{opacity:0;transform:translateX(8px)}to{opacity:1;transform:translateX(0)} }
+`;
+
+const EMPTY_FORM = { nombreAtencion: "", fotoReferencia: null, precio: "", profesionales: "", duracionMin: "", activo: true };
+
+/* ─── Label ─── */
+const Label = ({ children }) => (
+  <div style={{ fontSize: 10, fontWeight: 700, color: t.textMuted, textTransform: 'uppercase', letterSpacing: '0.6px', marginBottom: 7 }}>
+    {children}
+  </div>
+);
+
+/* ─── StatCard ─── */
+function StatCard({ icon: Icon, label, value, color }) {
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-gray-800 rounded-xl p-6 max-w-md w-full mx-4 shadow-2xl border border-gray-700">
-        <div className="flex items-center gap-3 mb-4">
-          <div className="bg-red-500 bg-opacity-20 p-2 rounded-lg">
-            <AlertTriangle className="text-red-500" size={24} />
-          </div>
-          <h3 className="text-xl font-bold text-white">{title}</h3>
+    <div className="stat-c" style={{
+      background: t.card, border: `1px solid ${t.border}`,
+      borderRadius: 14, padding: '18px 20px',
+      display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+    }}>
+      <div>
+        <div style={{ fontSize: 10, fontWeight: 700, color: t.textMuted, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 6 }}>{label}</div>
+        <div className="mono" style={{ fontSize: 26, fontWeight: 700, color }}>{value}</div>
+      </div>
+      <div style={{
+        width: 40, height: 40, borderRadius: 11,
+        background: `${color}15`, border: `1px solid ${color}25`,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+      }}>
+        <Icon size={18} color={color} />
+      </div>
+    </div>
+  );
+}
+
+/* ─── Toggle ─── */
+function Toggle({ checked, onChange, disabled }) {
+  return (
+    <div
+      className="toggle-track"
+      style={{ background: checked ? t.accent : t.border, opacity: disabled ? 0.4 : 1 }}
+      onClick={() => !disabled && onChange(!checked)}
+    >
+      <div className="toggle-thumb" style={{ transform: checked ? 'translateX(18px)' : 'translateX(0)' }} />
+    </div>
+  );
+}
+
+/* ─── Confirm Modal ─── */
+function ConfirmModal({ isOpen, title, message, onConfirm, onCancel }) {
+  if (!isOpen) return null;
+  return (
+    <div className="modal-bd" style={{
+      position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)',
+      backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+      zIndex: 100, padding: 16,
+    }}>
+      <div className="modal-box" style={{
+        background: t.card, border: `1px solid ${t.border}`,
+        borderRadius: 20, padding: 32, maxWidth: 380, width: '100%',
+      }}>
+        <div style={{
+          width: 52, height: 52, borderRadius: '50%',
+          background: `${t.danger}15`, border: `1px solid ${t.danger}30`,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          margin: '0 auto 18px',
+        }}>
+          <AlertTriangle size={24} color={t.danger} />
         </div>
-        <p className="text-gray-300 mb-6">{message}</p>
-        <div className="flex gap-3">
-          <button
-            onClick={onCancel}
-            className="flex-1 bg-gray-700 hover:bg-gray-600 text-white py-2 px-4 rounded-lg transition-colors"
-          >
-            Cancelar
-          </button>
-          <button
-            onClick={onConfirm}
-            className="flex-1 bg-red-600 hover:bg-red-700 text-white py-2 px-4 rounded-lg transition-colors"
-          >
-            Eliminar
+        <h3 style={{ fontSize: 20, fontWeight: 800, color: t.text, textAlign: 'center', marginBottom: 10 }}>{title}</h3>
+        <p style={{ fontSize: 13, color: t.textMuted, textAlign: 'center', marginBottom: 24, lineHeight: 1.5 }}>{message}</p>
+        <div style={{ display: 'flex', gap: 10 }}>
+          <button onClick={onCancel} className="btn-g" style={{
+            flex: 1, padding: '12px', background: t.surface, border: `1px solid ${t.border}`,
+            borderRadius: 10, color: t.textMuted, fontFamily: 'Sora, sans-serif', fontSize: 13, fontWeight: 600,
+          }}>Cancelar</button>
+          <button onClick={onConfirm} className="btn-p" style={{
+            flex: 1, padding: '12px', background: `${t.danger}18`, border: `1px solid ${t.danger}35`,
+            borderRadius: 10, color: t.danger, fontFamily: 'Sora, sans-serif', fontSize: 13, fontWeight: 700,
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+          }}>
+            <Trash2 size={14} /> Eliminar
           </button>
         </div>
       </div>
@@ -50,613 +171,402 @@ function ConfirmModal({ isOpen, onConfirm, onCancel, title, message }) {
   );
 }
 
-export default function ServiceConfigStyle3() {
+/* ─── Input con icono ─── */
+function IconInput({ icon: Icon, right, disabled, ...props }) {
+  return (
+    <div style={{ position: 'relative' }}>
+      <Icon size={14} color={t.textMuted} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
+      <input className="pf-input" disabled={disabled} style={{ paddingLeft: 36, paddingRight: right ? 40 : 14 }} {...props} />
+      {right && (
+        <span style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', fontSize: 11, color: t.textMuted }}>{right}</span>
+      )}
+    </div>
+  );
+}
+
+/* ─── COMPONENTE PRINCIPAL ─── */
+export default function ServiceConfig() {
   const navigate = useNavigate();
+
   const [services, setServices] = useState([
-    { id: 1, refPhoto: null, name: "Servicio 1", price: "50" },
-    { id: 2, refPhoto: null, name: "Servicio 2", price: "75" },
+    { id: 1, refPhoto: null, name: "Corte Clásico",    price: "2500" },
+    { id: 2, refPhoto: null, name: "Corte + Barba",    price: "3800" },
+    { id: 3, refPhoto: null, name: "Coloración",       price: "5500" },
   ]);
 
-  const [formData, setFormData] = useState({
-    nombreAtencion: "",
-    fotoReferencia: null,
-    precio: "",
-    profesionales: "",
-    duracionMin: "",
-    activo: true,
-  });
+  const [formData, setFormData]           = useState(EMPTY_FORM);
+  const [selectedService, setSelected]    = useState(null);
+  const [confirmModal, setConfirmModal]   = useState({ isOpen: false, serviceId: null });
 
-  const [selectedService, setSelectedService] = useState(null);
-  const [confirmModal, setConfirmModal] = useState({
-    isOpen: false,
-    serviceId: null,
-  });
+  /* ─── Helpers ─── */
+  const avgPrice = () => {
+    const prices = services.map(s => parseFloat(s.price) || 0).filter(p => p > 0);
+    if (!prices.length) return '0';
+    return Math.round(prices.reduce((a, b) => a + b, 0) / prices.length).toLocaleString('es-AR');
+  };
 
   const addService = () => {
-    const newService = {
-      id: Date.now(),
-      refPhoto: null,
-      name: `Servicio ${services.length + 1}`,
-      price: "0",
-    };
-    setServices([...services, newService]);
-    setSelectedService(newService);
-
-    // Cargar datos del nuevo servicio en el formulario
-    setFormData({
-      nombreAtencion: newService.name,
-      fotoReferencia: newService.refPhoto,
-      precio: newService.price,
-      profesionales: "",
-      duracionMin: "",
-      activo: true,
-    });
+    const ns = { id: Date.now(), refPhoto: null, name: `Servicio ${services.length + 1}`, price: "0" };
+    setServices([...services, ns]);
+    selectService(ns);
   };
 
-  const removeService = (id) => {
-    if (services.length > 1) {
-      setServices(services.filter((s) => s.id !== id));
-      if (selectedService?.id === id) {
-        setSelectedService(null);
-        setFormData({
-          nombreAtencion: "",
-          fotoReferencia: null,
-          precio: "",
-          profesionales: "",
-          duracionMin: "",
-          activo: true,
-        });
-      }
-      setConfirmModal({ isOpen: false, serviceId: null });
+  const selectService = (svc) => {
+    setSelected(svc);
+    setFormData({ nombreAtencion: svc.name, fotoReferencia: svc.refPhoto, precio: svc.price, profesionales: '', duracionMin: '', activo: true });
+  };
+
+  const removeService = () => {
+    const id = confirmModal.serviceId;
+    if (services.length > 1 && id) {
+      setServices(prev => prev.filter(s => s.id !== id));
+      if (selectedService?.id === id) { setSelected(null); setFormData(EMPTY_FORM); }
     }
+    setConfirmModal({ isOpen: false, serviceId: null });
   };
 
-  const handleInputChange = (e) => {
+  const syncService = (field, value) => {
+    if (!selectedService) return;
+    setServices(prev => prev.map(s => s.id === selectedService.id ? { ...s, [field]: value } : s));
+    setSelected(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleInput = (e) => {
     const { name, value, type, checked } = e.target;
-    const newFormData = {
-      ...formData,
-      [name]: type === "checkbox" ? checked : value,
-    };
-    setFormData(newFormData);
-
-    // Actualizar el servicio seleccionado en tiempo real
-    if (selectedService) {
-      const updatedServices = services.map((s) =>
-        s.id === selectedService.id
-          ? {
-              ...s,
-              name: name === "nombreAtencion" ? value : s.name,
-              price: name === "precio" ? value : s.price,
-              refPhoto: name === "fotoReferencia" ? value : s.refPhoto,
-            }
-          : s,
-      );
-      setServices(updatedServices);
-    }
+    const v = type === 'checkbox' ? checked : value;
+    setFormData(prev => ({ ...prev, [name]: v }));
+    if (name === 'nombreAtencion') syncService('name', value);
+    if (name === 'precio')         syncService('price', value);
   };
 
-  const handleServiceChange = (id, field, value) => {
-    const updatedServices = services.map((s) =>
-      s.id === id ? { ...s, [field]: value } : s,
-    );
-    setServices(updatedServices);
-
-    // Si es el servicio seleccionado, actualizar el formulario
-    if (selectedService?.id === id) {
-      if (field === "refPhoto") {
-        setFormData({ ...formData, fotoReferencia: value });
-      } else if (field === "name") {
-        setFormData({ ...formData, nombreAtencion: value });
-      } else if (field === "price") {
-        setFormData({ ...formData, precio: value });
+  const handlePhoto = (file, svcId = null) => {
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const id = svcId ?? selectedService?.id;
+      setServices(prev => prev.map(s => s.id === id ? { ...s, refPhoto: reader.result } : s));
+      if (selectedService?.id === id) {
+        setSelected(prev => ({ ...prev, refPhoto: reader.result }));
+        setFormData(prev => ({ ...prev, fotoReferencia: reader.result }));
       }
-    }
+    };
+    reader.readAsDataURL(file);
   };
 
-  const handleFileUpload = (id, file) => {
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        handleServiceChange(id, "refPhoto", reader.result);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  const handleMainPhotoUpload = (file) => {
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const newPhoto = reader.result;
-        setFormData({ ...formData, fotoReferencia: newPhoto });
-
-        // Actualizar también el servicio seleccionado
-        if (selectedService) {
-          handleServiceChange(selectedService.id, "refPhoto", newPhoto);
-        }
-      };
-      reader.readAsDataURL(file);
+  const removePhoto = (svcId = null) => {
+    const id = svcId ?? selectedService?.id;
+    setServices(prev => prev.map(s => s.id === id ? { ...s, refPhoto: null } : s));
+    if (selectedService?.id === id) {
+      setSelected(prev => ({ ...prev, refPhoto: null }));
+      setFormData(prev => ({ ...prev, fotoReferencia: null }));
     }
   };
 
   const handleSave = () => {
-    if (!selectedService) {
-      alert("⚠️ Selecciona un servicio para guardar");
-      return;
-    }
-
-    if (!formData.nombreAtencion.trim()) {
-      alert("⚠️ El nombre del servicio es requerido");
-      return;
-    }
-
-    console.log("Guardando configuración:", {
-      service: selectedService,
-      formData,
-    });
-    alert("✅ Configuración guardada exitosamente");
+    if (!selectedService || !formData.nombreAtencion.trim()) return;
+    console.log('Guardando:', { service: selectedService, formData });
+    alert('✅ Configuración guardada exitosamente');
   };
 
-  const handleCancel = () => {
-    setFormData({
-      nombreAtencion: "",
-      fotoReferencia: null,
-      precio: "",
-      profesionales: "",
-      duracionMin: "",
-      activo: true,
-    });
-    setSelectedService(null);
-  };
-
-  const handleSelectService = (service) => {
-    setSelectedService(service);
-    setFormData({
-      nombreAtencion: service.name || "",
-      fotoReferencia: service.refPhoto || null,
-      precio: service.price || "",
-      profesionales: "",
-      duracionMin: "",
-      activo: true,
-    });
-  };
-
-  const openDeleteModal = (id) => {
-    setConfirmModal({ isOpen: true, serviceId: id });
-  };
-
-  const calculateAveragePrice = () => {
-    const validPrices = services
-      .map((s) => parseFloat(s.price) || 0)
-      .filter((p) => p > 0);
-
-    if (validPrices.length === 0) return 0;
-
-    const avg = validPrices.reduce((a, b) => a + b, 0) / validPrices.length;
-    return avg.toFixed(2);
-  };
+  const fmt = (n) => `$${Number(n || 0).toLocaleString('es-AR')}`;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-gray-900 to-slate-800">
-      <div className="flex h-screen">
+    <>
+      <style>{STYLES}</style>
+
+      <div className="sc-root" style={{ display: 'flex', height: '100vh', background: t.bg }}>
         <Sidebar />
 
-        {/* Contenido principal */}
-        <div className="flex-1 overflow-auto p-8">
-          <div className="max-w-8xl mx-auto">
-            {/* Header */}
-            <div className="mb-8">
-              <h1 className="text-4xl font-bold text-white mb-2">
-                Configuración de Servicios
+        <div style={{ flex: 1, overflowY: 'auto', padding: '28px 32px' }}>
+
+          {/* Header */}
+          <div style={{
+            background: t.surface, border: `1px solid ${t.border}`,
+            borderRadius: 18, padding: '22px 28px', marginBottom: 22,
+            display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+          }}>
+            <div>
+              <div style={{
+                display: 'inline-flex', alignItems: 'center', gap: 5,
+                background: `${t.accent}15`, border: `1px solid ${t.accent}30`,
+                borderRadius: 20, padding: '3px 11px',
+                fontSize: 10, color: t.accent, fontWeight: 700,
+                letterSpacing: '0.8px', textTransform: 'uppercase', marginBottom: 8,
+              }}>
+                <Settings size={10} /> Configuración
+              </div>
+              <h1 style={{ fontSize: 26, fontWeight: 800, color: t.text, letterSpacing: '-0.5px', marginBottom: 3 }}>
+                Servicios
               </h1>
-              <p className="text-gray-400">
-                Administra y personaliza los servicios de tu negocio
-              </p>
+              <p style={{ fontSize: 13, color: t.textMuted }}>Administrá y personalizá los servicios de tu negocio</p>
             </div>
 
-            {/* Stats cards */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-              <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl p-6 shadow-lg">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-blue-100 text-sm">Total Servicios</p>
-                    <p className="text-white text-3xl font-bold mt-1">
-                      {services.length}
-                    </p>
-                  </div>
-                  <Settings className="text-blue-200" size={40} />
-                </div>
-              </div>
-              <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-xl p-6 shadow-lg">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-green-100 text-sm">Servicios Activos</p>
-                    <p className="text-white text-3xl font-bold mt-1">
-                      {services.length}
-                    </p>
-                  </div>
-                  <UserCheck className="text-green-200" size={40} />
-                </div>
-              </div>
-              <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl p-6 shadow-lg">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-purple-100 text-sm">Precio Promedio</p>
-                    <p className="text-white text-3xl font-bold mt-1">
-                      ${calculateAveragePrice()}
-                    </p>
-                  </div>
-                  <DollarSign className="text-purple-200" size={40} />
-                </div>
-              </div>
-            </div>
+            <button className="btn-p" onClick={addService} style={{
+              padding: '10px 20px', background: t.accent, border: 'none',
+              borderRadius: 10, color: '#fff', fontWeight: 700, fontSize: 13,
+              fontFamily: 'Sora, sans-serif',
+              display: 'flex', alignItems: 'center', gap: 8,
+            }}>
+              <Plus size={15} /> Nuevo Servicio
+            </button>
+          </div>
 
-            {/* Main Content Card */}
-            <div className="bg-gradient-to-br from-gray-800 to-gray-900 rounded-2xl shadow-2xl overflow-hidden border border-gray-700">
-              <div className="grid grid-cols-12 gap-0">
-                {/* Panel central - Servicios */}
-                <div className="col-span-7 p-8 border-r border-gray-700">
-                  <div className="flex justify-between items-center mb-6">
-                    <h2 className="text-2xl font-bold text-white flex items-center gap-2">
-                      <Settings size={24} className="text-blue-400" />
-                      Lista de Servicios
-                    </h2>
+          {/* Stats */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14, marginBottom: 22 }}>
+            <StatCard icon={Settings}  label="Total servicios"  value={services.length}   color={t.info}   />
+            <StatCard icon={UserCheck} label="Activos"          value={services.length}   color={t.accent} />
+            <StatCard icon={DollarSign} label="Precio promedio" value={`$${avgPrice()}`} color={t.gold}   />
+          </div>
+
+          {/* Main panel */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.05fr', gap: 16 }}>
+
+            {/* ─── Lista de servicios ─── */}
+            <div style={{ background: t.card, border: `1px solid ${t.border}`, borderRadius: 18, padding: '20px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <Settings size={14} color={t.accent} />
+                  <span style={{ fontSize: 14, fontWeight: 700, color: t.text }}>Lista de servicios</span>
+                </div>
+                <span style={{ fontSize: 11, color: t.textDim }}>{services.length} en total</span>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, maxHeight: 580, overflowY: 'auto' }}>
+                {services.map((svc) => (
+                  <div
+                    key={svc.id}
+                    className={`svc-card ${selectedService?.id === svc.id ? 'active' : ''}`}
+                    onClick={() => selectService(svc)}
+                  >
+                    {/* Delete */}
                     <button
-                      onClick={addService}
-                      className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white px-4 py-2 rounded-lg transition-all shadow-lg hover:shadow-xl flex items-center gap-2"
+                      className="del-btn btn-p"
+                      onClick={e => { e.stopPropagation(); setConfirmModal({ isOpen: true, serviceId: svc.id }); }}
+                      style={{
+                        position: 'absolute', top: 8, right: 8, zIndex: 2,
+                        width: 26, height: 26, borderRadius: 7,
+                        background: `${t.danger}18`, border: `1px solid ${t.danger}30`,
+                        color: t.danger, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      }}
                     >
-                      <Plus size={18} />
-                      <span className="text-sm font-medium">Nuevo</span>
+                      <Trash2 size={12} />
+                    </button>
+
+                    {/* Foto */}
+                    {svc.refPhoto ? (
+                      <div style={{ position: 'relative' }}>
+                        <label onClick={e => e.stopPropagation()} style={{ cursor: 'pointer', display: 'block' }}>
+                          <img src={svc.refPhoto} alt={svc.name} style={{ width: '100%', height: 100, objectFit: 'cover' }} />
+                          <input type="file" accept="image/*" style={{ display: 'none' }}
+                            onChange={e => handlePhoto(e.target.files[0], svc.id)} />
+                        </label>
+                        <button
+                          onClick={e => { e.stopPropagation(); removePhoto(svc.id); }}
+                          style={{
+                            position: 'absolute', bottom: 6, right: 6,
+                            width: 22, height: 22, borderRadius: 6,
+                            background: `${t.danger}20`, border: `1px solid ${t.danger}35`,
+                            color: t.danger, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          }}
+                        >
+                          <X size={11} />
+                        </button>
+                      </div>
+                    ) : (
+                      <label onClick={e => e.stopPropagation()} style={{ cursor: 'pointer', display: 'block' }}>
+                        <div style={{
+                          height: 90, background: t.surface, border: `2px dashed ${t.border}`,
+                          display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 4,
+                        }}>
+                          <Image size={18} color={t.textDim} />
+                          <span style={{ fontSize: 10, color: t.textDim }}>Añadir foto</span>
+                        </div>
+                        <input type="file" accept="image/*" style={{ display: 'none' }}
+                          onChange={e => handlePhoto(e.target.files[0], svc.id)} />
+                      </label>
+                    )}
+
+                    {/* Info */}
+                    <div style={{ padding: '12px 12px 14px' }}>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: t.text, marginBottom: 4, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {svc.name || 'Sin nombre'}
+                      </div>
+                      <div className="mono" style={{ fontSize: 16, fontWeight: 700, color: t.accent }}>
+                        {fmt(svc.price)}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {services.length === 0 && (
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '40px 20px', gap: 10 }}>
+                  <Settings size={24} color={t.textDim} />
+                  <span style={{ fontSize: 13, color: t.textMuted }}>No hay servicios configurados</span>
+                </div>
+              )}
+            </div>
+
+            {/* ─── Panel de edición ─── */}
+            <div style={{ background: t.card, border: `1px solid ${t.border}`, borderRadius: 18, padding: '20px 22px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 18 }}>
+                <FileText size={14} color={t.accent} />
+                <span style={{ fontSize: 14, fontWeight: 700, color: t.text }}>Detalles del servicio</span>
+              </div>
+
+              {!selectedService ? (
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: 320, gap: 12 }}>
+                  <div style={{
+                    width: 52, height: 52, borderRadius: 14, background: t.surface,
+                    border: `1px solid ${t.border}`, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  }}>
+                    <Edit size={20} color={t.textDim} />
+                  </div>
+                  <p style={{ fontSize: 13, color: t.textMuted, textAlign: 'center' }}>
+                    Seleccioná un servicio<br />para editar sus detalles
+                  </p>
+                </div>
+              ) : (
+                <div className="detail-in" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+
+                  {/* Banner */}
+                  <div style={{
+                    background: `${t.accent}10`, border: `1px solid ${t.accent}25`,
+                    borderRadius: 10, padding: '9px 14px',
+                    fontSize: 12, color: t.accent, display: 'flex', alignItems: 'center', gap: 6,
+                  }}>
+                    <Edit size={12} />
+                    Editando: <strong>{selectedService.name}</strong>
+                  </div>
+
+                  {/* Foto de referencia */}
+                  <div>
+                    <Label>Foto de referencia</Label>
+                    {formData.fotoReferencia ? (
+                      <div style={{ position: 'relative' }}>
+                        <label style={{ cursor: 'pointer', display: 'block' }}>
+                          <img src={formData.fotoReferencia} alt="Preview" style={{
+                            width: '100%', height: 130, objectFit: 'cover',
+                            borderRadius: 12, border: `1px solid ${t.border}`,
+                          }} />
+                          <input type="file" accept="image/*" style={{ display: 'none' }}
+                            onChange={e => handlePhoto(e.target.files[0])} />
+                        </label>
+                        <button onClick={() => removePhoto()} style={{
+                          position: 'absolute', top: 8, right: 8,
+                          width: 26, height: 26, borderRadius: 7,
+                          background: `${t.danger}20`, border: `1px solid ${t.danger}35`,
+                          color: t.danger, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        }}>
+                          <X size={12} />
+                        </button>
+                      </div>
+                    ) : (
+                      <label className="upload-zone" style={{ height: 90 }}>
+                        <Upload size={20} color={t.textMuted} style={{ marginBottom: 5 }} />
+                        <span style={{ fontSize: 12, color: t.textMuted, fontWeight: 600 }}>Subir imagen</span>
+                        <span style={{ fontSize: 10, color: t.textDim, marginTop: 2 }}>PNG, JPG · máx 5MB</span>
+                        <input type="file" accept="image/*" style={{ display: 'none' }}
+                          onChange={e => handlePhoto(e.target.files[0])} />
+                      </label>
+                    )}
+                  </div>
+
+                  {/* Nombre */}
+                  <div>
+                    <Label>Nombre de atención</Label>
+                    <input name="nombreAtencion" value={formData.nombreAtencion}
+                      onChange={handleInput} placeholder="Ej: Corte de cabello premium"
+                      className="pf-input" />
+                  </div>
+
+                  {/* Precio y Duración */}
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                    <div>
+                      <Label>Precio</Label>
+                      <IconInput icon={DollarSign} name="precio" type="number"
+                        value={formData.precio} onChange={handleInput} placeholder="0" />
+                    </div>
+                    <div>
+                      <Label>Duración mínima</Label>
+                      <IconInput icon={Clock} name="duracionMin" type="number"
+                        value={formData.duracionMin} onChange={handleInput} placeholder="30" right="min" />
+                    </div>
+                  </div>
+
+                  {/* Profesionales */}
+                  <div>
+                    <Label>Profesionales asignados</Label>
+                    <IconInput
+                      icon={UserCheck} name="profesionales"
+                      value={formData.profesionales}
+                      readOnly
+                      onClick={() => navigate('/configuracionprofesionales')}
+                      placeholder="Tocar para seleccionar..."
+                      style={{ cursor: 'pointer' }}
+                    />
+                  </div>
+
+                  {/* Estado toggle */}
+                  <div style={{
+                    background: t.surface, border: `1px solid ${t.border}`,
+                    borderRadius: 11, padding: '12px 14px',
+                    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                  }}>
+                    <div>
+                      <div style={{ fontSize: 12, fontWeight: 600, color: t.text, marginBottom: 2 }}>Estado del servicio</div>
+                      <div style={{ fontSize: 11, color: t.textMuted }}>{formData.activo ? 'Activo — visible para clientes' : 'Inactivo — oculto'}</div>
+                    </div>
+                    <Toggle
+                      checked={formData.activo}
+                      onChange={val => setFormData(prev => ({ ...prev, activo: val }))}
+                    />
+                  </div>
+
+                  {/* Acciones */}
+                  <div style={{ display: 'flex', gap: 10, paddingTop: 4 }}>
+                    <button onClick={() => { setSelected(null); setFormData(EMPTY_FORM); }} className="btn-g" style={{
+                      flex: 1, padding: '12px', background: t.surface,
+                      border: `1px solid ${t.border}`, borderRadius: 10,
+                      color: t.textMuted, fontFamily: 'Sora, sans-serif', fontSize: 13, fontWeight: 600,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                    }}>
+                      <X size={14} /> Cancelar
+                    </button>
+                    <button onClick={handleSave} className="btn-p" style={{
+                      flex: 2, padding: '12px', background: t.accent, border: 'none',
+                      borderRadius: 10, color: '#fff', fontFamily: 'Sora, sans-serif',
+                      fontSize: 13, fontWeight: 700,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                    }}>
+                      <Save size={14} /> Guardar cambios
                     </button>
                   </div>
-
-                  {/* Grid de servicios */}
-                  <div className="grid grid-cols-2 gap-4 max-h-[800px] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-gray-700 scrollbar-track-gray-800">
-                    {services.map((service) => (
-                      <div
-                        key={service.id}
-                        onClick={() => handleSelectService(service)}
-                        className={`bg-gradient-to-br from-gray-700 to-gray-800 rounded-xl p-4 relative group hover:shadow-xl transition-all cursor-pointer border-2 ${
-                          selectedService?.id === service.id
-                            ? "border-blue-500 shadow-lg shadow-blue-500/20"
-                            : "border-transparent"
-                        }`}
-                      >
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            openDeleteModal(service.id);
-                          }}
-                          className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity bg-red-500 text-white p-1.5 rounded-lg hover:bg-red-600 z-10"
-                          title="Eliminar servicio"
-                        >
-                          <Trash2 size={16} />
-                        </button>
-
-                        <div className="relative mb-3">
-                          {service.refPhoto ? (
-                            <div className="relative">
-                              <label className="cursor-pointer">
-                                <img
-                                  src={service.refPhoto}
-                                  alt="Preview"
-                                  className="w-full h-28 object-cover rounded-lg hover:opacity-80 transition-opacity"
-                                />
-                                <input
-                                  type="file"
-                                  accept="image/*"
-                                  className="hidden"
-                                  onClick={(e) => e.stopPropagation()}
-                                  onChange={(e) =>
-                                    handleFileUpload(
-                                      service.id,
-                                      e.target.files[0],
-                                    )
-                                  }
-                                />
-                              </label>
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleServiceChange(
-                                    service.id,
-                                    "refPhoto",
-                                    null,
-                                  );
-                                }}
-                                className="absolute top-1 right-1 bg-red-500 text-white p-1 rounded hover:bg-red-600"
-                              >
-                                <X size={14} />
-                              </button>
-                            </div>
-                          ) : (
-                            <label className="bg-gray-600 bg-opacity-30 border-2 border-dashed border-gray-500 rounded-lg h-28 flex flex-col items-center justify-center cursor-pointer hover:bg-gray-600 hover:bg-opacity-50 transition-all">
-                              <Image size={24} className="text-gray-400 mb-1" />
-                              <span className="text-xs text-gray-400">
-                                Añadir foto
-                              </span>
-                              <input
-                                type="file"
-                                accept="image/*"
-                                className="hidden"
-                                onClick={(e) => e.stopPropagation()}
-                                onChange={(e) =>
-                                  handleFileUpload(
-                                    service.id,
-                                    e.target.files[0],
-                                  )
-                                }
-                              />
-                            </label>
-                          )}
-                        </div>
-
-                        <div className="text-white font-semibold text-sm mb-1">
-                          {service.name || "Sin nombre"}
-                        </div>
-                        <div className="text-green-400 font-bold text-lg">
-                          ${service.price || "0"}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-
-                  {services.length === 0 && (
-                    <div className="text-center py-12 text-gray-400">
-                      <Settings size={48} className="mx-auto mb-4 opacity-30" />
-                      <p className="text-lg">No hay servicios configurados</p>
-                      <p className="text-sm mt-2">
-                        Haz clic en "Nuevo" para agregar uno
-                      </p>
-                    </div>
-                  )}
                 </div>
-
-                {/* Panel derecho - Formulario detallado */}
-                <div className="col-span-5 bg-gradient-to-br from-gray-750 to-gray-850 p-8">
-                  <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
-                    <FileText size={20} className="text-blue-400" />
-                    Detalles del Servicio
-                  </h3>
-
-                  {selectedService ? (
-                    <div className="bg-blue-900 bg-opacity-20 border border-blue-700 rounded-lg p-4 mb-6">
-                      <p className="text-blue-300 text-sm">
-                        <span className="font-semibold">Editando:</span>{" "}
-                        {selectedService.name || "Servicio sin nombre"}
-                      </p>
-                    </div>
-                  ) : (
-                    <div className="bg-gray-700 bg-opacity-30 border border-gray-600 rounded-lg p-4 mb-6">
-                      <p className="text-gray-400 text-sm">
-                        Selecciona un servicio para editar sus detalles
-                      </p>
-                    </div>
-                  )}
-
-                  <div className="space-y-5">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-300 mb-2">
-                        Nombre de atención
-                      </label>
-                      <input
-                        type="text"
-                        name="nombreAtencion"
-                        value={formData.nombreAtencion}
-                        onChange={handleInputChange}
-                        disabled={!selectedService}
-                        placeholder="Ej: Corte de cabello premium"
-                        className="w-full px-4 py-3 bg-gray-700 bg-opacity-50 border border-gray-600 text-white rounded-xl focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 transition-all placeholder-gray-500 disabled:opacity-50 disabled:cursor-not-allowed"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-300 mb-2">
-                        Foto de referencia
-                      </label>
-                      {formData.fotoReferencia ? (
-                        <div className="relative">
-                          <label className="cursor-pointer">
-                            <img
-                              src={formData.fotoReferencia}
-                              alt="Preview"
-                              className="w-full h-40 object-cover rounded-xl hover:opacity-80 transition-opacity"
-                            />
-                            {selectedService && (
-                              <input
-                                type="file"
-                                accept="image/*"
-                                className="hidden"
-                                onChange={(e) =>
-                                  handleMainPhotoUpload(e.target.files[0])
-                                }
-                              />
-                            )}
-                          </label>
-                          <button
-                            onClick={() => {
-                              setFormData({
-                                ...formData,
-                                fotoReferencia: null,
-                              });
-                              if (selectedService) {
-                                handleServiceChange(
-                                  selectedService.id,
-                                  "refPhoto",
-                                  null,
-                                );
-                              }
-                            }}
-                            disabled={!selectedService}
-                            className="absolute top-2 right-2 bg-red-500 text-white p-2 rounded-lg hover:bg-red-600 transition-colors disabled:opacity-50"
-                          >
-                            <X size={16} />
-                          </button>
-                        </div>
-                      ) : (
-                        <label
-                          className={`w-full border-2 border-dashed border-gray-600 rounded-xl p-8 flex flex-col items-center justify-center ${selectedService ? "cursor-pointer hover:border-blue-500 hover:bg-blue-900 hover:bg-opacity-10" : "opacity-50 cursor-not-allowed"} transition-all`}
-                        >
-                          <Upload size={32} className="text-gray-400 mb-2" />
-                          <span className="text-sm text-gray-400">
-                            Haz clic para subir imagen
-                          </span>
-                          <span className="text-xs text-gray-500 mt-1">
-                            PNG, JPG hasta 5MB
-                          </span>
-                          {selectedService && (
-                            <input
-                              type="file"
-                              accept="image/*"
-                              className="hidden"
-                              onChange={(e) =>
-                                handleMainPhotoUpload(e.target.files[0])
-                              }
-                            />
-                          )}
-                        </label>
-                      )}
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-300 mb-2">
-                        Precio
-                      </label>
-                      <div className="relative">
-                        <DollarSign
-                          className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
-                          size={18}
-                        />
-                        <input
-                          type="number"
-                          name="precio"
-                          value={formData.precio}
-                          onChange={handleInputChange}
-                          disabled={!selectedService}
-                          placeholder="0.00"
-                          className="w-full pl-10 pr-4 py-3 bg-gray-700 bg-opacity-50 border border-gray-600 text-white rounded-xl focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 transition-all placeholder-gray-500 disabled:opacity-50 disabled:cursor-not-allowed"
-                        />
-                      </div>
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-300 mb-2">
-                        Profesionales asignados
-                      </label>
-
-                      <div className="relative">
-                        <UserCheck
-                          className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
-                          size={18}
-                        />
-
-                        <input
-                          type="text"
-                          name="profesionales"
-                          value={formData.profesionales}
-                          readOnly
-                          disabled={!selectedService}
-                          onClick={() => {
-                            if (selectedService) {
-                              navigate("/configuracionprofesionales");
-                            }
-                          }}
-                          placeholder="Tocar para seleccionar profesionales"
-                          className="w-full pl-10 pr-4 py-3 bg-gray-700 bg-opacity-50 border border-gray-600 text-white rounded-xl cursor-pointer focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 transition-all placeholder-gray-500 disabled:opacity-50 disabled:cursor-not-allowed"
-                        />
-                      </div>
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-300 mb-2">
-                        Duración mínima
-                      </label>
-                      <div className="relative">
-                        <Clock
-                          className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
-                          size={18}
-                        />
-                        <input
-                          type="number"
-                          name="duracionMin"
-                          value={formData.duracionMin}
-                          onChange={handleInputChange}
-                          disabled={!selectedService}
-                          placeholder="30"
-                          className="w-full pl-10 pr-4 py-3 bg-gray-700 bg-opacity-50 border border-gray-600 text-white rounded-xl focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 transition-all placeholder-gray-500 disabled:opacity-50 disabled:cursor-not-allowed"
-                        />
-                        <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 text-sm">
-                          min
-                        </span>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center justify-between p-4 bg-gray-700 bg-opacity-30 rounded-xl border border-gray-600">
-                      <span className="text-sm font-medium text-gray-300">
-                        Estado del servicio
-                      </span>
-                      <label
-                        className={`relative inline-flex items-center ${selectedService ? "cursor-pointer" : "cursor-not-allowed opacity-50"}`}
-                      >
-                        <input
-                          type="checkbox"
-                          name="activo"
-                          checked={formData.activo}
-                          onChange={handleInputChange}
-                          disabled={!selectedService}
-                          className="sr-only peer"
-                        />
-                        <div className="w-11 h-6 bg-gray-600 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-500"></div>
-                        <span className="ml-3 text-sm font-medium text-gray-300">
-                          {formData.activo ? "Activo" : "Inactivo"}
-                        </span>
-                      </label>
-                    </div>
-
-                    {/* Botones de acción mejorados */}
-                    <div className="flex gap-3 pt-4">
-                      <button
-                        onClick={handleSave}
-                        disabled={!selectedService}
-                        className="flex-1 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white py-3 rounded-xl font-semibold transition-all shadow-lg hover:shadow-xl flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        <Save size={20} />
-                        Guardar
-                      </button>
-                      <button
-                        onClick={handleCancel}
-                        disabled={!selectedService}
-                        className="flex-1 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white py-3 rounded-xl font-semibold transition-all shadow-lg hover:shadow-xl flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        <X size={20} />
-                        Cancelar
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
+              )}
             </div>
+          </div>
 
-            {/* Nota informativa */}
-            <div className="mt-8 bg-gradient-to-r from-blue-900 to-blue-800 bg-opacity-30 border-l-4 border-blue-500 p-4 rounded-lg">
-              <p className="text-blue-200 text-sm">
-                <span className="font-semibold">💡 Consejo:</span> Los cambios
-                se guardarán automáticamente al presionar el botón "Guardar".
-                Haz clic en cualquier imagen para cambiarla.
-              </p>
-            </div>
+          {/* Tip */}
+          <div style={{
+            marginTop: 18, background: `${t.info}08`, border: `1px solid ${t.info}20`,
+            borderLeft: `3px solid ${t.info}`, borderRadius: '0 10px 10px 0',
+            padding: '11px 16px',
+          }}>
+            <p style={{ fontSize: 12, color: t.info }}>
+              <strong>💡 Tip:</strong> Hacé clic en la imagen de una card para cambiarla directamente. Los cambios se guardan al presionar "Guardar cambios".
+            </p>
           </div>
         </div>
       </div>
 
-      {/* Modal de Confirmación */}
       <ConfirmModal
         isOpen={confirmModal.isOpen}
         title="¿Eliminar servicio?"
-        message="Esta acción no se puede deshacer. ¿Estás seguro de que deseas eliminar este servicio?"
-        onConfirm={() => removeService(confirmModal.serviceId)}
+        message="Esta acción no se puede deshacer. El servicio se eliminará permanentemente."
+        onConfirm={removeService}
         onCancel={() => setConfirmModal({ isOpen: false, serviceId: null })}
       />
-    </div>
+    </>
   );
 }
