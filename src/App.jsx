@@ -14,6 +14,7 @@ import Turnos from "./Sistema/Turnos/Turnos";
 import Cocina from "./Sistema/Cocina";
 import ConfiguracionServicio from "./Sistema/Turnos/ConfiguracionServicio";
 import ConfiguracionProfecional from "./Sistema/Turnos/ConfiguracionProfecional";
+import MetodosdePago from "./Sistema/MetodosdePago";
 
 // Importación del componente Administrar desde la carpeta Cliente
 import Administrar from "./Cliente/Administrar";
@@ -55,6 +56,9 @@ export default function AppRoutes() {
 
       {/* Ruta para el módulo de configuración */}
       <Route path="/configuracionprofecional" element={<ConfiguracionProfecional />} />
+
+      {/* Ruta para el módulo de métodos de pago */}
+      <Route path="/metodosdepago" element={<MetodosdePago />} />
     </Routes>
   );
 }

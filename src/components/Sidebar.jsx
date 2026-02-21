@@ -128,7 +128,7 @@ const menuSections = [
       { path: '/mesas', label: 'Mesas', icon: UtensilsCrossed },
       { path: '/atencion', label: 'Atención', icon: Truck },
       { path: '/turnos', label: 'Turnos', icon: Clock },
-      { path: '/metodos-pago', label: 'Métodos de Pago', icon: CreditCard },
+      { path: '/metodosdepago', label: 'Métodos de Pago', icon: CreditCard },
       { path: '/configuracion', label: 'Info. Fiscal', icon: Settings },
     ],
   },
