@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { X, Plus, Trash2, ShoppingCart, UtensilsCrossed, User, CheckCircle, Send } from 'lucide-react';
-import Sidebar from '../components/Sidebar';
+import Sidebar from '../../components/Sidebar';
 
 /* ─── Paleta unificada ─── */
 const t = {

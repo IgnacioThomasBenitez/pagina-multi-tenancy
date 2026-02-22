@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Clock, Users, CheckCircle, X, ChefHat, AlertCircle, Flame, Utensils } from 'lucide-react';
-import Sidebar from '../components/Sidebar';
+import Sidebar from '../../components/Sidebar';
 
 /* ─── Paleta unificada ─── */
 const t = {
