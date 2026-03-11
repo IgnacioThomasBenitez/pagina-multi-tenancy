@@ -1,5 +1,23 @@
+// ============================================================
+//  🔥 FIREBASE CONFIG — descomentar cuando el back esté listo
+// ============================================================
+// import { initializeApp } from 'firebase/app';
+// import { getFirestore, collection, getDocs, setDoc, doc, deleteDoc, onSnapshot } from 'firebase/firestore';
+
+// const firebaseConfig = {
+//   apiKey:            "TU_API_KEY",
+//   authDomain:        "TU_PROJECT.firebaseapp.com",
+//   projectId:         "TU_PROJECT_ID",
+//   storageBucket:     "TU_PROJECT.appspot.com",
+//   messagingSenderId: "TU_MESSAGING_SENDER_ID",
+//   appId:             "TU_APP_ID",
+// };
+// const app = initializeApp(firebaseConfig);
+// const db  = getFirestore(app);
+// ============================================================
+
 import React, { useState, useEffect } from 'react';
-import { Clock, Users, CheckCircle, X, ChefHat, AlertCircle, Flame, Utensils } from 'lucide-react';
+import { Clock, Users, CheckCircle, X, ChefHat, Flame, Utensils } from 'lucide-react';
 import Sidebar from '../../components/Sidebar';
 
 /* ─── Paleta unificada ─── */
@@ -43,7 +61,6 @@ const STYLES = `
   .btn-p:hover { filter: brightness(1.1); transform: translateY(-1px); box-shadow: 0 6px 20px rgba(16,185,129,0.25); }
   .btn-p:active { transform: translateY(0); }
 
-  /* Drawer */
   .drawer { 
     position: fixed; right: 0; top: 0; height: 100vh; width: 460px;
     background: ${t.surface}; border-left: 1px solid ${t.border};
@@ -59,14 +76,11 @@ const STYLES = `
   }
   @keyframes bdIn { from{opacity:0}to{opacity:1} }
 
-  /* Status dot pulse */
   .dot-pulse { animation: dp 1.5s infinite; }
   @keyframes dp { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.4;transform:scale(0.7)} }
 
-  /* Time urgency glow on card */
   .urgency-glow { box-shadow: 0 0 20px ${t.danger}25, 0 12px 32px rgba(0,0,0,0.4); }
 
-  /* Notification badge */
   .notif-badge {
     position: absolute; top: -4px; right: -4px;
     width: 16px; height: 16px; border-radius: 50%;
@@ -75,7 +89,6 @@ const STYLES = `
     animation: dp 1.5s infinite;
   }
 
-  /* Item rows */
   .item-row { transition: background 0.15s; }
   .item-row:hover { background: ${t.border}22 !important; }
 `;
@@ -85,7 +98,6 @@ const formatTime = (min) => {
   return `${Math.floor(min / 60)}h ${min % 60}min`;
 };
 
-/* ─── Stat Card ─── */
 function StatCard({ label, value, color, Icon }) {
   return (
     <div className="stat-c" style={{
@@ -107,7 +119,6 @@ function StatCard({ label, value, color, Icon }) {
   );
 }
 
-/* ─── Status pill ─── */
 function StatusPill({ status }) {
   const cfg = STATUS[status] || STATUS['entrante'];
   return (
@@ -125,70 +136,90 @@ function StatusPill({ status }) {
   );
 }
 
-/* ─── MAIN ─── */
+// ── Datos mock para desarrollo front
+const MOCK_ORDERS = [
+  {
+    id: 1001, tableId: 1, table: 'Mesa 1', status: 'entrante',
+    items: [
+      { name: 'Hamburguesa completa', quantity: 1, notes: 'sin cebolla' },
+      { name: 'Coca Cola', quantity: 2, notes: '' },
+    ],
+    notes: 'sin cebolla', time: 3, guests: 3, sentAt: new Date().toLocaleString(),
+  },
+  {
+    id: 1002, tableId: 2, table: 'Mesa 2', status: 'tardando',
+    items: [
+      { name: 'Pizza Napolitana', quantity: 1, notes: '' },
+      { name: 'Cerveza', quantity: 2, notes: '' },
+    ],
+    notes: '', time: 14, guests: 3, sentAt: new Date().toLocaleString(),
+  },
+  {
+    id: 1003, tableId: 3, table: 'Mesa 3', status: 'muy-tarde',
+    items: [
+      { name: 'Pizza Muzzarella', quantity: 2, notes: 'extra queso' },
+    ],
+    notes: 'extra queso', time: 25, guests: 2, sentAt: new Date().toLocaleString(),
+  },
+];
+
 const RestaurantOrders = () => {
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [drawerOpen,    setDrawerOpen]    = useState(false);
-  const [orders, setOrders]               = useState([]);
-  const [finalizados, setFinalizados]     = useState(0);
+  const [orders,        setOrders]        = useState([]);
+  const [finalizados,   setFinalizados]   = useState(0);
 
+  // ── CARGAR ÓRDENES ──────────────────────────────────────────
+  // ✅ MOCK — carga datos en memoria para desarrollo front
   useEffect(() => {
-    loadOrders();
-    loadFinalizados();
-    const interval = setInterval(loadOrders, 2000);
-    return () => clearInterval(interval);
+    setOrders(MOCK_ORDERS);
   }, []);
+  // 🔥 REAL — descomentar cuando el back conecte Firebase
+  // (usa onSnapshot para actualizaciones en tiempo real):
+  // useEffect(() => {
+  //   const unsub = onSnapshot(collection(db, 'kitchenOrders'), (snapshot) => {
+  //     const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+  //     setOrders(data);
+  //   });
+  //   return () => unsub();
+  // }, []);
 
+  // ── TIMER — actualiza tiempo y status cada minuto ───────────
+  // ✅ MOCK — igual en ambas versiones, no necesita Firebase
   useEffect(() => {
     const interval = setInterval(() => {
-      setOrders(prev => {
-        const updated = prev.map(o => {
-          const newTime = o.time + 1;
-          let status = o.status;
-          if (newTime > 20) status = 'muy-tarde';
-          else if (newTime > 10) status = 'tardando';
-          return { ...o, time: newTime, status };
-        });
-        if (updated.length) localStorage.setItem('kitchenOrders', JSON.stringify(updated));
-        return updated;
-      });
+      setOrders(prev => prev.map(o => {
+        const newTime = o.time + 1;
+        let status = o.status;
+        if (newTime > 20) status = 'muy-tarde';
+        else if (newTime > 10) status = 'tardando';
+        return { ...o, time: newTime, status };
+      }));
     }, 60000);
     return () => clearInterval(interval);
   }, []);
 
-  const loadOrders = () => {
-    const raw = localStorage.getItem('kitchenOrders');
-    if (raw) setOrders(JSON.parse(raw));
-  };
+  const openOrder  = (order) => { setSelectedOrder(order); setDrawerOpen(true); };
+  const closeDrawer = () => { setDrawerOpen(false); setTimeout(() => setSelectedOrder(null), 300); };
 
-  const loadFinalizados = () => {
-    const n = localStorage.getItem('finalizadosCount');
-    if (n) setFinalizados(parseInt(n));
-  };
-
-  const openOrder = (order) => {
-    setSelectedOrder(order);
-    setDrawerOpen(true);
-  };
-
-  const closeDrawer = () => {
-    setDrawerOpen(false);
-    setTimeout(() => setSelectedOrder(null), 300);
-  };
-
+  // ── FINALIZAR PEDIDO ────────────────────────────────────────
+  // ✅ MOCK — elimina del estado en memoria
   const markAsReady = (orderId) => {
-    const newCount = finalizados + 1;
-    setFinalizados(newCount);
-    localStorage.setItem('finalizadosCount', newCount.toString());
-    const updated = orders.filter(o => o.id !== orderId);
-    setOrders(updated);
-    localStorage.setItem('kitchenOrders', JSON.stringify(updated));
+    setFinalizados(prev => prev + 1);
+    setOrders(prev => prev.filter(o => o.id !== orderId));
     closeDrawer();
   };
+  // 🔥 REAL — descomentar cuando el back conecte Firebase:
+  // const markAsReady = async (orderId) => {
+  //   setFinalizados(prev => prev + 1);
+  //   setOrders(prev => prev.filter(o => o.id !== orderId));
+  //   await deleteDoc(doc(db, 'kitchenOrders', String(orderId)));
+  //   closeDrawer();
+  // };
 
   const grouped = {
-    entrante:   orders.filter(o => o.status === 'entrante'),
-    tardando:   orders.filter(o => o.status === 'tardando'),
+    entrante:    orders.filter(o => o.status === 'entrante'),
+    tardando:    orders.filter(o => o.status === 'tardando'),
     'muy-tarde': orders.filter(o => o.status === 'muy-tarde'),
   };
 
@@ -201,7 +232,7 @@ const RestaurantOrders = () => {
 
         <div style={{ flex: 1, overflowY: 'auto', padding: '28px 30px' }}>
 
-          {/* ─── Header ─── */}
+          {/* Header */}
           <div style={{
             background: t.surface, border: `1px solid ${t.border}`,
             borderRadius: 18, padding: '20px 26px', marginBottom: 22,
@@ -224,8 +255,6 @@ const RestaurantOrders = () => {
                 Actualización automática desde Mesas · cada 2 seg
               </p>
             </div>
-
-            {/* Live indicator */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <div style={{
                 background: `${t.accent}15`, border: `1px solid ${t.accent}30`,
@@ -239,24 +268,24 @@ const RestaurantOrders = () => {
             </div>
           </div>
 
-          {/* ─── Stats ─── */}
+          {/* Stats */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14, marginBottom: 22 }}>
-            <StatCard label="Finalizados"   value={finalizados}                    color={t.info}   Icon={CheckCircle} />
-            <StatCard label="Entrantes"     value={grouped.entrante.length}        color={t.accent} Icon={Utensils}    />
-            <StatCard label="Preparando"    value={grouped.tardando.length}        color={t.gold}   Icon={Clock}       />
-            <StatCard label="Muy tarde"     value={grouped['muy-tarde'].length}    color={t.danger} Icon={Flame}       />
+            <StatCard label="Finalizados" value={finalizados}                 color={t.info}   Icon={CheckCircle} />
+            <StatCard label="Entrantes"   value={grouped.entrante.length}     color={t.accent} Icon={Utensils}    />
+            <StatCard label="Preparando"  value={grouped.tardando.length}     color={t.gold}   Icon={Clock}       />
+            <StatCard label="Muy tarde"   value={grouped['muy-tarde'].length} color={t.danger} Icon={Flame}       />
           </div>
 
-          {/* ─── Estado visual por columna ─── */}
+          {/* Estado visual por columna */}
           <div style={{
             background: t.card, border: `1px solid ${t.border}`,
             borderRadius: 16, padding: '16px 20px', marginBottom: 22,
             display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12,
           }}>
             {[
-              { key: 'entrante',   label: 'Entrante',   color: t.accent, count: grouped.entrante.length    },
-              { key: 'tardando',   label: 'Preparando', color: t.gold,   count: grouped.tardando.length   },
-              { key: 'muy-tarde',  label: 'Muy tarde',  color: t.danger, count: grouped['muy-tarde'].length, pulse: true },
+              { key: 'entrante',  label: 'Entrante',   color: t.accent, count: grouped.entrante.length    },
+              { key: 'tardando',  label: 'Preparando', color: t.gold,   count: grouped.tardando.length    },
+              { key: 'muy-tarde', label: 'Muy tarde',  color: t.danger, count: grouped['muy-tarde'].length, pulse: true },
             ].map(({ key, label, color, count, pulse }) => (
               <div key={key} style={{
                 background: t.surface, border: `1px solid ${t.border}`,
@@ -275,7 +304,7 @@ const RestaurantOrders = () => {
             ))}
           </div>
 
-          {/* ─── Grid de órdenes ─── */}
+          {/* Grid de órdenes */}
           {orders.length === 0 ? (
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: 280, gap: 14 }}>
               <div style={{
@@ -302,11 +331,8 @@ const RestaurantOrders = () => {
                     className={`order-card ${isActive ? 'active' : ''} ${isUrgent ? 'status-muy-tarde' : ''}`}
                     onClick={() => openOrder(order)}
                   >
-                    {/* Color bar superior */}
                     <div style={{ height: 3, background: cfg.color, opacity: 0.7 }} />
-
                     <div style={{ padding: '16px 16px 14px' }}>
-                      {/* Top row */}
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 14 }}>
                         <div>
                           <div style={{ fontSize: 17, fontWeight: 800, color: t.text, marginBottom: 2 }}>{order.table}</div>
@@ -314,8 +340,6 @@ const RestaurantOrders = () => {
                         </div>
                         <StatusPill status={order.status} />
                       </div>
-
-                      {/* Meta */}
                       <div style={{ display: 'flex', gap: 14, marginBottom: 14 }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12, color: t.textMuted }}>
                           <Clock size={12} />
@@ -328,8 +352,6 @@ const RestaurantOrders = () => {
                           <span>{order.guests} items</span>
                         </div>
                       </div>
-
-                      {/* Items */}
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 5, marginBottom: order.notes ? 10 : 14 }}>
                         {order.items.slice(0, 3).map((item, idx) => (
                           <div key={idx} className="item-row" style={{
@@ -347,8 +369,6 @@ const RestaurantOrders = () => {
                           </div>
                         )}
                       </div>
-
-                      {/* Nota */}
                       {order.notes && (
                         <div style={{
                           background: `${t.gold}10`, border: `1px solid ${t.gold}25`,
@@ -358,8 +378,6 @@ const RestaurantOrders = () => {
                           📝 {order.notes}
                         </div>
                       )}
-
-                      {/* Botón */}
                       <button
                         className="btn-p"
                         onClick={e => { e.stopPropagation(); markAsReady(order.id); }}
@@ -380,18 +398,15 @@ const RestaurantOrders = () => {
           )}
         </div>
 
-        {/* ─── Backdrop ─── */}
-        {drawerOpen && (
-          <div className="backdrop" onClick={closeDrawer} />
-        )}
+        {/* Backdrop */}
+        {drawerOpen && <div className="backdrop" onClick={closeDrawer} />}
 
-        {/* ─── Drawer lateral ─── */}
+        {/* Drawer lateral */}
         <div className={`drawer ${drawerOpen ? 'open' : ''}`}>
           {selectedOrder && (() => {
             const cfg = STATUS[selectedOrder.status] || STATUS['entrante'];
             return (
               <div style={{ padding: '28px 26px' }}>
-                {/* Close */}
                 <button
                   onClick={closeDrawer}
                   style={{
@@ -405,8 +420,6 @@ const RestaurantOrders = () => {
                 >
                   <X size={15} />
                 </button>
-
-                {/* Header */}
                 <div style={{ marginBottom: 22 }}>
                   <div style={{ fontSize: 10, color: t.textMuted, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: 6 }}>
                     Orden #{selectedOrder.id}
@@ -416,57 +429,33 @@ const RestaurantOrders = () => {
                   </h2>
                   <StatusPill status={selectedOrder.status} />
                 </div>
-
-                {/* Meta cards */}
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 22 }}>
-                  <div style={{
-                    background: t.card, border: `1px solid ${t.border}`, borderRadius: 12, padding: '14px',
-                  }}>
+                  <div style={{ background: t.card, border: `1px solid ${t.border}`, borderRadius: 12, padding: '14px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-                      <div style={{
-                        width: 30, height: 30, borderRadius: 8,
-                        background: `${t.info}18`, border: `1px solid ${t.info}25`,
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      }}>
+                      <div style={{ width: 30, height: 30, borderRadius: 8, background: `${t.info}18`, border: `1px solid ${t.info}25`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                         <Clock size={14} color={t.info} />
                       </div>
                       <span style={{ fontSize: 11, color: t.textMuted }}>Tiempo</span>
                     </div>
-                    <div className="mono" style={{
-                      fontSize: 20, fontWeight: 700,
-                      color: selectedOrder.status === 'muy-tarde' ? t.danger : selectedOrder.status === 'tardando' ? t.gold : t.text,
-                    }}>
+                    <div className="mono" style={{ fontSize: 20, fontWeight: 700, color: selectedOrder.status === 'muy-tarde' ? t.danger : selectedOrder.status === 'tardando' ? t.gold : t.text }}>
                       {formatTime(selectedOrder.time)}
                     </div>
                   </div>
-                  <div style={{
-                    background: t.card, border: `1px solid ${t.border}`, borderRadius: 12, padding: '14px',
-                  }}>
+                  <div style={{ background: t.card, border: `1px solid ${t.border}`, borderRadius: 12, padding: '14px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-                      <div style={{
-                        width: 30, height: 30, borderRadius: 8,
-                        background: `${t.purple}18`, border: `1px solid ${t.purple}25`,
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      }}>
+                      <div style={{ width: 30, height: 30, borderRadius: 8, background: `${t.purple}18`, border: `1px solid ${t.purple}25`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                         <Users size={14} color={t.purple} />
                       </div>
                       <span style={{ fontSize: 11, color: t.textMuted }}>Items</span>
                     </div>
-                    <div className="mono" style={{ fontSize: 20, fontWeight: 700, color: t.text }}>
-                      {selectedOrder.guests}
-                    </div>
+                    <div className="mono" style={{ fontSize: 20, fontWeight: 700, color: t.text }}>{selectedOrder.guests}</div>
                   </div>
                 </div>
-
-                {/* Items */}
                 <div style={{ marginBottom: 20 }}>
                   <div style={{ fontSize: 12, fontWeight: 700, color: t.textMuted, textTransform: 'uppercase', letterSpacing: '0.6px', marginBottom: 12 }}>
                     Items del pedido
                   </div>
-                  <div style={{
-                    background: t.card, border: `1px solid ${t.border}`,
-                    borderRadius: 14, overflow: 'hidden',
-                  }}>
+                  <div style={{ background: t.card, border: `1px solid ${t.border}`, borderRadius: 14, overflow: 'hidden' }}>
                     {selectedOrder.items.map((item, idx) => (
                       <div key={idx} style={{
                         display: 'flex', justifyContent: 'space-between', alignItems: 'center',
@@ -475,24 +464,15 @@ const RestaurantOrders = () => {
                       }}>
                         <div>
                           <div style={{ fontSize: 14, fontWeight: 600, color: t.text }}>{item.name}</div>
-                          {item.notes && (
-                            <div style={{ fontSize: 11, color: t.gold, marginTop: 2 }}>📝 {item.notes}</div>
-                          )}
+                          {item.notes && <div style={{ fontSize: 11, color: t.gold, marginTop: 2 }}>📝 {item.notes}</div>}
                         </div>
-                        <div className="mono" style={{
-                          fontSize: 14, fontWeight: 700,
-                          background: `${t.accent}15`, color: t.accent,
-                          border: `1px solid ${t.accent}25`,
-                          borderRadius: 8, padding: '3px 10px',
-                        }}>
+                        <div className="mono" style={{ fontSize: 14, fontWeight: 700, background: `${t.accent}15`, color: t.accent, border: `1px solid ${t.accent}25`, borderRadius: 8, padding: '3px 10px' }}>
                           ×{item.quantity}
                         </div>
                       </div>
                     ))}
                   </div>
                 </div>
-
-                {/* Notas especiales */}
                 {selectedOrder.notes && (
                   <div style={{ marginBottom: 20 }}>
                     <div style={{ fontSize: 12, fontWeight: 700, color: t.textMuted, textTransform: 'uppercase', letterSpacing: '0.6px', marginBottom: 10 }}>
@@ -507,8 +487,6 @@ const RestaurantOrders = () => {
                     </div>
                   </div>
                 )}
-
-                {/* Finalizar */}
                 <button
                   className="btn-p"
                   onClick={() => markAsReady(selectedOrder.id)}

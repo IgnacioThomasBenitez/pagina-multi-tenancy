@@ -1,3 +1,23 @@
+// ============================================================
+//  🔥 FIREBASE CONFIG — descomentar cuando el back esté listo
+//  Firebase Console → Project Settings → Your apps → Web app
+// ============================================================
+// import { initializeApp } from 'firebase/app';
+// import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth';
+
+// const firebaseConfig = {
+//   apiKey:            "TU_API_KEY",
+//   authDomain:        "TU_PROJECT.firebaseapp.com",
+//   projectId:         "TU_PROJECT_ID",
+//   storageBucket:     "TU_PROJECT.appspot.com",
+//   messagingSenderId: "TU_MESSAGING_SENDER_ID",
+//   appId:             "TU_APP_ID",
+// };
+
+// const app  = initializeApp(firebaseConfig);
+// const auth = getAuth(app);
+// ============================================================
+
 import React, { useState } from 'react';
 import { Eye, EyeOff, Mail, Lock, Globe, Store, ArrowRight, Sparkles, CheckCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -17,7 +37,6 @@ const STYLES = `
   .auth-root * { font-family: 'Sora', sans-serif; }
   .mono { font-family: 'JetBrains Mono', monospace !important; }
 
-  /* Fondo animado */
   .auth-bg {
     position: fixed; inset: 0; overflow: hidden; pointer-events: none; z-index: 0;
   }
@@ -30,7 +49,6 @@ const STYLES = `
     50% { transform: translateY(-30px) scale(1.05); }
   }
 
-  /* Card */
   .auth-card {
     position: relative; z-index: 1;
     background: ${t.card};
@@ -45,7 +63,6 @@ const STYLES = `
     to   { opacity:1; transform: translateY(0) scale(1); }
   }
 
-  /* Inputs */
   .auth-input {
     width: 100%;
     background: ${t.surface};
@@ -60,31 +77,24 @@ const STYLES = `
   }
   .auth-input::placeholder { color: ${t.textMuted}; }
   .auth-input:focus { border-color: ${t.accent}; background: ${t.accent}08; }
+  .auth-input:disabled { opacity: 0.5; cursor: not-allowed; }
 
-  /* Botones */
   .btn-main {
     transition: all 0.15s ease;
     cursor: pointer;
     border: none;
   }
-  .btn-main:hover { filter: brightness(1.08); transform: translateY(-1px); box-shadow: 0 8px 24px rgba(16,185,129,0.25); }
-  .btn-main:active { transform: translateY(0); }
+  .btn-main:hover:not(:disabled) { filter: brightness(1.08); transform: translateY(-1px); box-shadow: 0 8px 24px rgba(16,185,129,0.25); }
+  .btn-main:active:not(:disabled) { transform: translateY(0); }
+  .btn-main:disabled { opacity: 0.6; cursor: not-allowed; }
 
-  .btn-tab {
-    transition: all 0.2s ease;
-    cursor: pointer; border: none;
-  }
-
-  .btn-btype {
-    transition: all 0.18s ease; cursor: pointer; border: none;
-  }
+  .btn-tab { transition: all 0.2s ease; cursor: pointer; border: none; }
+  .btn-btype { transition: all 0.18s ease; cursor: pointer; border: none; }
   .btn-btype:hover { transform: translateY(-2px); }
 
-  /* Fade entre vistas */
   .view-enter { animation: vIn 0.22s ease both; }
   @keyframes vIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
 
-  /* Dominio preview */
   .domain-preview {
     font-family: 'JetBrains Mono', monospace;
     font-size: 11px; color: ${t.textMuted};
@@ -93,25 +103,48 @@ const STYLES = `
     display: flex; align-items: center; gap: 4px;
   }
 
-  /* Separador */
   .auth-sep {
     display: flex; align-items: center; gap: 12px; margin: 16px 0;
   }
   .auth-sep::before, .auth-sep::after {
     content: ''; flex: 1; height: 1px; background: ${t.border};
   }
+
+  .error-box {
+    background: ${t.danger}12;
+    border: 1px solid ${t.danger}40;
+    border-radius: 10px;
+    padding: 10px 14px;
+    font-size: 12px;
+    color: ${t.danger};
+    margin-bottom: 14px;
+    display: flex; align-items: center; gap: 8px;
+  }
 `;
 
+// ── Mensajes de error de Firebase en español
+// (descomentar junto con la integración real)
+// const FIREBASE_ERRORS = {
+//   'auth/invalid-email':          'El email no es válido.',
+//   'auth/user-not-found':         'No existe una cuenta con ese email.',
+//   'auth/wrong-password':         'Contraseña incorrecta.',
+//   'auth/email-already-in-use':   'Ese email ya está registrado.',
+//   'auth/weak-password':          'La contraseña debe tener al menos 6 caracteres.',
+//   'auth/too-many-requests':      'Demasiados intentos. Esperá unos minutos.',
+//   'auth/network-request-failed': 'Error de red. Revisá tu conexión.',
+//   'auth/invalid-credential':     'Email o contraseña incorrectos.',
+// };
+// const friendlyError = (code) => FIREBASE_ERRORS[code] || 'Ocurrió un error. Intentá de nuevo.';
+
 const BUSINESS_TYPES = [
-  { id: 'barberia',    name: 'Barbería',     emoji: '💈' },
-  { id: 'kiosco',     name: 'Kiosco',       emoji: '🏪' },
-  { id: 'ropa',       name: 'Ropa',         emoji: '👗' },
-  { id: 'tecnologia', name: 'Tecnología',   emoji: '💻' },
-  { id: 'restaurante',name: 'Restaurante',  emoji: '🍔' },
-  { id: 'otro',       name: 'Otro',         emoji: '✨' },
+  { id: 'barberia',    name: 'Barbería',    emoji: '💈' },
+  { id: 'kiosco',     name: 'Kiosco',      emoji: '🏪' },
+  { id: 'ropa',       name: 'Ropa',        emoji: '👗' },
+  { id: 'tecnologia', name: 'Tecnología',  emoji: '💻' },
+  { id: 'restaurante',name: 'Restaurante', emoji: '🍔' },
+  { id: 'otro',       name: 'Otro',        emoji: '✨' },
 ];
 
-/* ─── Input con icono ─── */
 function AuthInput({ icon: Icon, rightIcon, onRightClick, ...props }) {
   return (
     <div style={{ position: 'relative' }}>
@@ -130,7 +163,6 @@ function AuthInput({ icon: Icon, rightIcon, onRightClick, ...props }) {
   );
 }
 
-/* ─── Label ─── */
 const Label = ({ children }) => (
   <div style={{ fontSize: 12, fontWeight: 600, color: t.textMuted, marginBottom: 8, letterSpacing: '0.2px' }}>
     {children}
@@ -141,29 +173,65 @@ export default function TenantAuthSystem() {
   const navigate = useNavigate();
   const [view, setView]                 = useState('login');
   const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading]           = useState(false);
+  const [error, setError]               = useState('');
+
   const [registerData, setRegisterData] = useState({ email: '', password: '', businessType: '', domain: '' });
   const [loginData, setLoginData]       = useState({ email: '', password: '', domain: '' });
 
-  const setReg = (k, v) => setRegisterData(prev => ({ ...prev, [k]: v }));
-  const setLog = (k, v) => setLoginData(prev => ({ ...prev, [k]: v }));
+  const setReg = (k, v) => { setRegisterData(prev => ({ ...prev, [k]: v })); setError(''); };
+  const setLog = (k, v) => { setLoginData(prev => ({ ...prev, [k]: v })); setError(''); };
 
-  const handleRegister = (e) => {
-    e?.preventDefault();
-    console.log('Registro:', registerData);
-    alert('¡Registro exitoso! Redirigiendo...');
-  };
-
+  // ── LOGIN ──────────────────────────────────────────────────
+  // ✅ MOCK — para desarrollo front, redirige directo sin Firebase
   const handleLogin = (e) => {
     e?.preventDefault();
-    console.log('Login:', loginData);
     navigate('/administrar');
   };
+  // 🔥 REAL — descomentar cuando se conecte Firebase:
+  // const handleLogin = async (e) => {
+  //   e?.preventDefault();
+  //   setError('');
+  //   setLoading(true);
+  //   try {
+  //     await signInWithEmailAndPassword(auth, loginData.email, loginData.password);
+  //     navigate('/administrar');
+  //   } catch (err) {
+  //     setError(friendlyError(err.code));
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
+
+  // ── REGISTRO ───────────────────────────────────────────────
+  // ✅ MOCK — para desarrollo front, valida campos y redirige
+  const handleRegister = (e) => {
+    e?.preventDefault();
+    if (!registerData.businessType) { setError('Seleccioná el tipo de negocio.'); return; }
+    if (!registerData.domain)       { setError('Ingresá un dominio para tu negocio.'); return; }
+    navigate('/administrar');
+  };
+  // 🔥 REAL — descomentar cuando se conecte Firebase:
+  // const handleRegister = async (e) => {
+  //   e?.preventDefault();
+  //   if (!registerData.businessType) { setError('Seleccioná el tipo de negocio.'); return; }
+  //   if (!registerData.domain)       { setError('Ingresá un dominio para tu negocio.'); return; }
+  //   setError('');
+  //   setLoading(true);
+  //   try {
+  //     await createUserWithEmailAndPassword(auth, registerData.email, registerData.password);
+  //     navigate('/administrar');
+  //   } catch (err) {
+  //     setError(friendlyError(err.code));
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
 
   return (
     <>
       <style>{STYLES}</style>
 
-      {/* Fondo con orbs */}
       <div className="auth-bg">
         <div className="auth-bg-orb" style={{ width: 400, height: 400, background: t.accent, top: '-100px', left: '-100px', animationDelay: '0s' }} />
         <div className="auth-bg-orb" style={{ width: 300, height: 300, background: t.purple, bottom: '-80px', right: '-60px', animationDelay: '4s' }} />
@@ -177,7 +245,7 @@ export default function TenantAuthSystem() {
       }}>
         <div style={{ width: '100%', maxWidth: 420 }}>
 
-          {/* Logo / Brand */}
+          {/* Logo */}
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: 28 }}>
             <div style={{
               width: 52, height: 52, borderRadius: 16,
@@ -208,7 +276,7 @@ export default function TenantAuthSystem() {
               <button
                 key={id}
                 className="btn-tab"
-                onClick={() => setView(id)}
+                onClick={() => { setView(id); setError(''); }}
                 style={{
                   flex: 1, padding: '10px',
                   background: view === id ? t.accent : 'transparent',
@@ -233,39 +301,37 @@ export default function TenantAuthSystem() {
                   <h2 style={{ fontSize: 22, fontWeight: 800, color: t.text, marginBottom: 4 }}>
                     Bienvenido de vuelta
                   </h2>
-                  <p style={{ fontSize: 13, color: t.textMuted }}>
-                    Ingresá a tu negocio digital
-                  </p>
+                  <p style={{ fontSize: 13, color: t.textMuted }}>Ingresá a tu negocio digital</p>
                 </div>
+
+                {error && <div className="error-box">⚠️ {error}</div>}
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
                   <div>
                     <Label>Email</Label>
                     <AuthInput
                       icon={Mail} type="email" placeholder="tu@email.com"
-                      value={loginData.email}
+                      value={loginData.email} disabled={loading}
                       onChange={e => setLog('email', e.target.value)}
                     />
                   </div>
-
                   <div>
                     <Label>Contraseña</Label>
                     <AuthInput
                       icon={Lock}
                       type={showPassword ? 'text' : 'password'}
                       placeholder="••••••••"
-                      value={loginData.password}
+                      value={loginData.password} disabled={loading}
                       onChange={e => setLog('password', e.target.value)}
                       rightIcon={showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                       onRightClick={() => setShowPassword(!showPassword)}
                     />
                   </div>
-
                   <div>
                     <Label>Dominio del negocio</Label>
                     <AuthInput
                       icon={Globe} type="text" placeholder="minegocio"
-                      value={loginData.domain}
+                      value={loginData.domain} disabled={loading}
                       onChange={e => setLog('domain', e.target.value)}
                     />
                     {loginData.domain && (
@@ -280,6 +346,7 @@ export default function TenantAuthSystem() {
                 <button
                   className="btn-main"
                   onClick={handleLogin}
+                  disabled={loading}
                   style={{
                     width: '100%', marginTop: 22, padding: '14px',
                     background: t.accent, borderRadius: 12,
@@ -288,7 +355,7 @@ export default function TenantAuthSystem() {
                     display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
                   }}
                 >
-                  Iniciar sesión <ArrowRight size={15} />
+                  {loading ? '⏳ Ingresando...' : <> Iniciar sesión <ArrowRight size={15} /> </>}
                 </button>
 
                 <div className="auth-sep">
@@ -332,30 +399,30 @@ export default function TenantAuthSystem() {
                   </div>
                 </div>
 
+                {error && <div className="error-box">⚠️ {error}</div>}
+
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
                   <div>
                     <Label>Email</Label>
                     <AuthInput
                       icon={Mail} type="email" placeholder="tu@email.com"
-                      value={registerData.email}
+                      value={registerData.email} disabled={loading}
                       onChange={e => setReg('email', e.target.value)}
                     />
                   </div>
-
                   <div>
                     <Label>Contraseña</Label>
                     <AuthInput
                       icon={Lock}
                       type={showPassword ? 'text' : 'password'}
                       placeholder="••••••••"
-                      value={registerData.password}
+                      value={registerData.password} disabled={loading}
                       onChange={e => setReg('password', e.target.value)}
                       rightIcon={showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                       onRightClick={() => setShowPassword(!showPassword)}
                     />
                   </div>
 
-                  {/* Tipo de negocio */}
                   <div>
                     <Label>Tipo de negocio</Label>
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
@@ -366,6 +433,7 @@ export default function TenantAuthSystem() {
                             key={type.id}
                             className="btn-btype"
                             type="button"
+                            disabled={loading}
                             onClick={() => setReg('businessType', type.id)}
                             style={{
                               padding: '12px 8px',
@@ -385,12 +453,11 @@ export default function TenantAuthSystem() {
                     </div>
                   </div>
 
-                  {/* Dominio */}
                   <div>
                     <Label>Tu dominio único</Label>
                     <AuthInput
                       icon={Globe} type="text" placeholder="minegocio"
-                      value={registerData.domain}
+                      value={registerData.domain} disabled={loading}
                       onChange={e => setReg('domain', e.target.value)}
                     />
                     {registerData.domain && (
@@ -405,6 +472,7 @@ export default function TenantAuthSystem() {
                 <button
                   className="btn-main"
                   onClick={handleRegister}
+                  disabled={loading}
                   style={{
                     width: '100%', marginTop: 22, padding: '14px',
                     background: t.accent, borderRadius: 12,
@@ -413,13 +481,12 @@ export default function TenantAuthSystem() {
                     display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
                   }}
                 >
-                  Crear mi negocio <ArrowRight size={15} />
+                  {loading ? '⏳ Creando cuenta...' : <> Crear mi negocio <ArrowRight size={15} /> </>}
                 </button>
               </div>
             )}
           </div>
 
-          {/* Footer */}
           <div style={{ textAlign: 'center', marginTop: 20, fontSize: 11, color: t.textDim }}>
             Al continuar aceptás los términos de servicio y la política de privacidad
           </div>

@@ -1,3 +1,22 @@
+// ============================================================
+//  🔥 FIREBASE CONFIG — descomentar cuando el back esté listo
+// ============================================================
+// import { initializeApp } from 'firebase/app';
+// import { getAuth } from 'firebase/auth';
+// import { getFirestore, collection, getDocs, setDoc, doc, deleteDoc } from 'firebase/firestore';
+
+// const firebaseConfig = {
+//   apiKey:            "TU_API_KEY",
+//   authDomain:        "TU_PROJECT.firebaseapp.com",
+//   projectId:         "TU_PROJECT_ID",
+//   storageBucket:     "TU_PROJECT.appspot.com",
+//   messagingSenderId: "TU_MESSAGING_SENDER_ID",
+//   appId:             "TU_APP_ID",
+// };
+// const app = initializeApp(firebaseConfig);
+// const db  = getFirestore(app);
+// ============================================================
+
 import React, { useState, useEffect } from 'react';
 import { X, Plus, Trash2, ShoppingCart, UtensilsCrossed, User, CheckCircle, Send } from 'lucide-react';
 import Sidebar from '../../components/Sidebar';
@@ -26,7 +45,6 @@ const STYLES = `
   ::-webkit-scrollbar-track { background: transparent; }
   ::-webkit-scrollbar-thumb { background: ${t.border}; border-radius: 2px; }
 
-  /* Mesa cards */
   .mesa-card {
     background: ${t.card}; border: 1px solid ${t.border};
     border-radius: 16px; cursor: pointer; overflow: hidden; position: relative;
@@ -36,7 +54,6 @@ const STYLES = `
   .mesa-card .del-btn { opacity: 0; transition: opacity 0.15s; }
   .mesa-card:hover .del-btn { opacity: 1; }
 
-  /* Menu items */
   .menu-item {
     background: ${t.surface}; border: 1px solid ${t.border}; border-radius: 12px;
     padding: 12px; cursor: pointer;
@@ -44,7 +61,6 @@ const STYLES = `
   }
   .menu-item:hover { border-color: ${t.accent}; background: ${t.accent}06; transform: translateY(-1px); }
 
-  /* Order item rows */
   .order-item {
     background: ${t.surface}; border: 1px solid ${t.border};
     border-radius: 12px; padding: 12px 14px;
@@ -52,7 +68,6 @@ const STYLES = `
   }
   .order-item:hover { border-color: ${t.borderLight}; }
 
-  /* Inputs */
   .tm-input {
     width: 100%; background: ${t.bg}; border: 1px solid ${t.border};
     border-radius: 9px; padding: 10px 13px; color: ${t.text};
@@ -70,7 +85,6 @@ const STYLES = `
   .tm-select:focus { border-color: ${t.accent}; }
   .tm-select option { background: ${t.card}; }
 
-  /* Qty buttons */
   .qty-btn {
     width: 26px; height: 26px; border-radius: 7px; border: none; cursor: pointer;
     background: ${t.border}; color: ${t.text}; font-size: 14px; font-weight: 700;
@@ -79,7 +93,6 @@ const STYLES = `
   }
   .qty-btn:hover { background: ${t.borderLight}; }
 
-  /* Buttons */
   .btn-p { transition: all 0.15s ease; cursor: pointer; border: none; }
   .btn-p:hover:not(:disabled) { filter: brightness(1.1); transform: translateY(-1px); }
   .btn-p:active { transform: translateY(0); }
@@ -87,22 +100,18 @@ const STYLES = `
   .btn-g { transition: all 0.15s ease; cursor: pointer; }
   .btn-g:hover { border-color: ${t.borderLight} !important; }
 
-  /* Modal */
   .modal-bd { animation: bdIn 0.18s ease; }
   @keyframes bdIn { from{opacity:0}to{opacity:1} }
   .modal-box { animation: mdIn 0.28s cubic-bezier(0.34,1.56,0.64,1); }
   @keyframes mdIn { from{opacity:0;transform:scale(0.93) translateY(8px)}to{opacity:1;transform:scale(1) translateY(0)} }
 
-  /* Category pills */
   .cat-pill { transition: all 0.15s ease; cursor: pointer; border: none; }
   .cat-pill:hover { border-color: ${t.borderLight} !important; }
 
-  /* Stat mini */
   .stat-mini { transition: transform 0.2s ease; }
   .stat-mini:hover { transform: translateY(-2px); }
 `;
 
-/* ─── Helpers ─── */
 const Label = ({ children }) => (
   <div style={{ fontSize: 10, fontWeight: 700, color: t.textMuted, textTransform: 'uppercase', letterSpacing: '0.6px', marginBottom: 7 }}>
     {children}
@@ -136,6 +145,17 @@ const MENU_ITEMS = [
 const CATEGORIES = ['Todas', 'Hamburguesas', 'Pizzas', 'Bebidas'];
 const fmt = (n) => `$${Number(n || 0).toLocaleString('es-AR')}`;
 
+// ── Datos iniciales mock para desarrollo front
+const INITIAL_TABLES = [
+  { id: 1, name: 'Mesa 1', status: 'OCUPADO', orders: [
+    { id: 1, name: 'Hamburguesa completa', category: 'Hamburguesas', price: 4500, quantity: 1, notes: '' },
+    { id: 2, name: 'Coca Cola', category: 'Bebidas', price: 2000, quantity: 1, notes: '' },
+  ], attendedBy: 'Juan', date: new Date().toLocaleString() },
+  { id: 2, name: 'Mesa 2', status: 'ESPERA',  orders: [], attendedBy: 'María', date: new Date().toLocaleString() },
+  { id: 3, name: 'Mesa 3', status: 'LIBRE',   orders: [], attendedBy: '-', date: '-' },
+  { id: 4, name: 'Mesa 4', status: 'LIBRE',   orders: [], attendedBy: '-', date: '-' },
+];
+
 export default function RestaurantTableManager() {
   const [tables,             setTables]             = useState([]);
   const [selectedTable,      setSelectedTable]      = useState(null);
@@ -145,32 +165,35 @@ export default function RestaurantTableManager() {
   const [newTableAttendant,  setNewTableAttendant]  = useState('');
   const [selectedCategory,   setSelectedCategory]  = useState('Todas');
 
-  /* ─── Init ─── */
+  // ── INIT ────────────────────────────────────────────────────
+  // ✅ MOCK — carga datos en memoria para desarrollo front
   useEffect(() => {
-    const stored = localStorage.getItem('restaurantTables');
-    if (stored) {
-      setTables(JSON.parse(stored));
-    } else {
-      const initial = [
-        { id: 1, name: 'Mesa 1', status: 'OCUPADO', orders: [
-          { id: 1, name: 'Hamburguesa completa', category: 'Hamburguesas', price: 4500, quantity: 1, notes: '' },
-          { id: 2, name: 'Coca Cola', category: 'Bebidas', price: 2000, quantity: 1, notes: '' },
-        ], attendedBy: 'Juan', date: new Date().toLocaleString() },
-        { id: 2, name: 'Mesa 2', status: 'ESPERA',  orders: [], attendedBy: 'María', date: new Date().toLocaleString() },
-        { id: 3, name: 'Mesa 3', status: 'LIBRE',   orders: [], attendedBy: '-',     date: '-' },
-        { id: 4, name: 'Mesa 4', status: 'LIBRE',   orders: [], attendedBy: '-',     date: '-' },
-      ];
-      setTables(initial);
-      localStorage.setItem('restaurantTables', JSON.stringify(initial));
-    }
+    setTables(INITIAL_TABLES);
   }, []);
+  // 🔥 REAL — descomentar cuando el back conecte Firebase:
+  // useEffect(() => {
+  //   const fetchTables = async () => {
+  //     const snapshot = await getDocs(collection(db, 'tables'));
+  //     const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+  //     setTables(data.length ? data : INITIAL_TABLES);
+  //   };
+  //   fetchTables();
+  // }, []);
 
+  // ── GUARDAR MESAS ───────────────────────────────────────────
+  // ✅ MOCK — solo actualiza el estado en memoria
   const saveTables = (updated) => {
     setTables(updated);
-    localStorage.setItem('restaurantTables', JSON.stringify(updated));
   };
+  // 🔥 REAL — descomentar cuando el back conecte Firebase:
+  // const saveTables = async (updated) => {
+  //   setTables(updated);
+  //   for (const table of updated) {
+  //     await setDoc(doc(db, 'tables', String(table.id)), table);
+  //   }
+  // };
 
-  const openTable = (table) => { setSelectedTable({ ...table }); setShowOrderModal(true); };
+  const openTable  = (table) => { setSelectedTable({ ...table }); setShowOrderModal(true); };
   const closeModal = () => { setShowOrderModal(false); };
 
   /* ─── Order actions ─── */
@@ -205,43 +228,85 @@ export default function RestaurantTableManager() {
     saveTables(tables.map(t => t.id === updated.id ? updated : t));
   };
 
+  // ── ENVIAR A COCINA ─────────────────────────────────────────
+  // ✅ MOCK — solo muestra alert y cierra el modal
   const sendOrder = () => {
     if (!selectedTable.orders.length) return;
     const now = new Date().toLocaleString();
-    const updatedTable = { ...selectedTable, status: 'OCUPADO', date: now, attendedBy: selectedTable.attendedBy === '-' ? 'Mesero' : selectedTable.attendedBy };
-    saveTables(tables.map(t => t.id === updatedTable.id ? updatedTable : t));
-
-    const kitchenOrder = {
-      id: Date.now(), tableId: updatedTable.id, table: updatedTable.name, status: 'entrante',
-      items: updatedTable.orders.map(o => ({ name: o.name, quantity: o.quantity, notes: o.notes })),
-      notes: updatedTable.orders.filter(o => o.notes).map(o => `${o.name}: ${o.notes}`).join(', '),
-      time: 0, guests: updatedTable.orders.reduce((s, o) => s + o.quantity, 0), sentAt: now,
+    const updatedTable = {
+      ...selectedTable, status: 'OCUPADO', date: now,
+      attendedBy: selectedTable.attendedBy === '-' ? 'Mesero' : selectedTable.attendedBy,
     };
-    const existing = JSON.parse(localStorage.getItem('kitchenOrders') || '[]');
-    localStorage.setItem('kitchenOrders', JSON.stringify([...existing, kitchenOrder]));
-    alert('✅ ¡Pedido enviado a cocina!');
+    saveTables(tables.map(t => t.id === updatedTable.id ? updatedTable : t));
+    alert('✅ ¡Pedido enviado a cocina! (mock)');
     closeModal();
   };
+  // 🔥 REAL — descomentar cuando el back conecte Firebase:
+  // const sendOrder = async () => {
+  //   if (!selectedTable.orders.length) return;
+  //   const now = new Date().toLocaleString();
+  //   const updatedTable = {
+  //     ...selectedTable, status: 'OCUPADO', date: now,
+  //     attendedBy: selectedTable.attendedBy === '-' ? 'Mesero' : selectedTable.attendedBy,
+  //   };
+  //   saveTables(tables.map(t => t.id === updatedTable.id ? updatedTable : t));
+  //   const kitchenOrder = {
+  //     id: Date.now(), tableId: updatedTable.id, table: updatedTable.name, status: 'entrante',
+  //     items: updatedTable.orders.map(o => ({ name: o.name, quantity: o.quantity, notes: o.notes })),
+  //     notes: updatedTable.orders.filter(o => o.notes).map(o => `${o.name}: ${o.notes}`).join(', '),
+  //     time: 0, guests: updatedTable.orders.reduce((s, o) => s + o.quantity, 0), sentAt: now,
+  //   };
+  //   await setDoc(doc(db, 'kitchenOrders', String(kitchenOrder.id)), kitchenOrder);
+  //   alert('✅ ¡Pedido enviado a cocina!');
+  //   closeModal();
+  // };
 
+  // ── CERRAR MESA ─────────────────────────────────────────────
+  // ✅ MOCK — limpia la mesa en memoria
   const closeTable = () => {
     if (!window.confirm('¿Cerrar esta mesa y cobrar?')) return;
     const t2 = { ...selectedTable, status: 'LIBRE', orders: [], attendedBy: '-', date: '-' };
     saveTables(tables.map(t => t.id === t2.id ? t2 : t));
-    const existing = JSON.parse(localStorage.getItem('kitchenOrders') || '[]');
-    localStorage.setItem('kitchenOrders', JSON.stringify(existing.filter(o => o.tableId !== selectedTable.id)));
     closeModal();
   };
+  // 🔥 REAL — descomentar cuando el back conecte Firebase:
+  // const closeTable = async () => {
+  //   if (!window.confirm('¿Cerrar esta mesa y cobrar?')) return;
+  //   const t2 = { ...selectedTable, status: 'LIBRE', orders: [], attendedBy: '-', date: '-' };
+  //   saveTables(tables.map(t => t.id === t2.id ? t2 : t));
+  //   await deleteDoc(doc(db, 'kitchenOrders', String(selectedTable.id)));
+  //   closeModal();
+  // };
 
+  // ── ELIMINAR MESA ───────────────────────────────────────────
+  // ✅ MOCK — elimina del estado en memoria
   const deleteTable = (id) => {
     if (window.confirm('¿Eliminar esta mesa?')) saveTables(tables.filter(t => t.id !== id));
   };
+  // 🔥 REAL — descomentar cuando el back conecte Firebase:
+  // const deleteTable = async (id) => {
+  //   if (window.confirm('¿Eliminar esta mesa?')) {
+  //     saveTables(tables.filter(t => t.id !== id));
+  //     await deleteDoc(doc(db, 'tables', String(id)));
+  //   }
+  // };
 
+  // ── AGREGAR MESA ────────────────────────────────────────────
+  // ✅ MOCK — agrega al estado en memoria
   const addNewTable = () => {
     if (!newTableName.trim()) return;
     const nt = { id: Date.now(), name: newTableName, status: 'LIBRE', orders: [], attendedBy: newTableAttendant || '-', date: '-' };
     saveTables([...tables, nt]);
     setNewTableName(''); setNewTableAttendant(''); setShowAddTableModal(false);
   };
+  // 🔥 REAL — descomentar cuando el back conecte Firebase:
+  // const addNewTable = async () => {
+  //   if (!newTableName.trim()) return;
+  //   const nt = { id: Date.now(), name: newTableName, status: 'LIBRE', orders: [], attendedBy: newTableAttendant || '-', date: '-' };
+  //   saveTables([...tables, nt]);
+  //   await setDoc(doc(db, 'tables', String(nt.id)), nt);
+  //   setNewTableName(''); setNewTableAttendant(''); setShowAddTableModal(false);
+  // };
 
   const filteredMenu = selectedCategory === 'Todas' ? MENU_ITEMS : MENU_ITEMS.filter(m => m.category === selectedCategory);
 
@@ -275,7 +340,6 @@ export default function RestaurantTableManager() {
             </div>
 
             <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-              {/* Status pills summary */}
               {[
                 { key: 'OCUPADO', count: tables.filter(t2 => t2.status === 'OCUPADO').length },
                 { key: 'ESPERA',  count: tables.filter(t2 => t2.status === 'ESPERA').length  },
@@ -309,10 +373,7 @@ export default function RestaurantTableManager() {
               const tTotal = table.orders.reduce((s, o) => s + o.price * o.quantity, 0);
               return (
                 <div key={table.id} className="mesa-card" onClick={() => openTable(table)}>
-                  {/* Status bar */}
                   <div style={{ height: 3, background: cfg.color }} />
-
-                  {/* Delete */}
                   <button
                     className="del-btn btn-p"
                     onClick={e => { e.stopPropagation(); deleteTable(table.id); }}
@@ -325,7 +386,6 @@ export default function RestaurantTableManager() {
                   >
                     <Trash2 size={12} />
                   </button>
-
                   <div style={{ padding: '14px 14px 16px' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
                       <div>
@@ -333,7 +393,6 @@ export default function RestaurantTableManager() {
                         <StatusPill status={table.status} />
                       </div>
                     </div>
-
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 5, fontSize: 12 }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: t.textMuted }}>
                         <User size={11} />
@@ -367,11 +426,9 @@ export default function RestaurantTableManager() {
               borderRadius: 20, width: '100%', maxWidth: 900, maxHeight: '90vh',
               overflow: 'hidden', display: 'flex', flexDirection: 'column',
             }}>
-              {/* Modal header */}
               <div style={{
                 padding: '20px 24px', borderBottom: `1px solid ${t.border}`,
-                display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                flexShrink: 0,
+                display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0,
               }}>
                 <div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
@@ -391,8 +448,7 @@ export default function RestaurantTableManager() {
                           padding: '4px 12px', borderRadius: 20, fontSize: 10, fontWeight: 700,
                           background: active ? cfg.bg : t.surface,
                           border: `1px solid ${active ? cfg.border : t.border}`,
-                          color: active ? cfg.color : t.textMuted,
-                          cursor: 'pointer',
+                          color: active ? cfg.color : t.textMuted, cursor: 'pointer',
                         }}>
                           {cfg.label}
                         </button>
@@ -409,7 +465,6 @@ export default function RestaurantTableManager() {
                 </button>
               </div>
 
-              {/* Modal body */}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', flex: 1, overflow: 'hidden' }}>
 
                 {/* ─── Pedidos ─── */}
@@ -417,7 +472,6 @@ export default function RestaurantTableManager() {
                   <div style={{ fontSize: 12, fontWeight: 700, color: t.textMuted, textTransform: 'uppercase', letterSpacing: '0.6px', marginBottom: 14 }}>
                     Pedido actual
                   </div>
-
                   <div style={{ flex: 1 }}>
                     {selectedTable.orders.length === 0 ? (
                       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: 160, gap: 10 }}>
@@ -443,9 +497,7 @@ export default function RestaurantTableManager() {
                                 <span className="mono" style={{ fontSize: 13, fontWeight: 700, color: t.accent, minWidth: 56, textAlign: 'right' }}>
                                   {fmt(item.price * item.quantity)}
                                 </span>
-                                <button onClick={() => removeOrderItem(item.id)} style={{
-                                  background: 'none', border: 'none', cursor: 'pointer', color: t.danger, padding: 2,
-                                }}>
+                                <button onClick={() => removeOrderItem(item.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: t.danger, padding: 2 }}>
                                   <Trash2 size={14} />
                                 </button>
                               </div>
@@ -466,7 +518,6 @@ export default function RestaurantTableManager() {
                     )}
                   </div>
 
-                  {/* Total + acciones */}
                   <div style={{ paddingTop: 16, borderTop: `1px solid ${t.border}`, marginTop: 16 }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
                       <span style={{ fontSize: 14, fontWeight: 700, color: t.text }}>Total</span>
@@ -497,23 +548,18 @@ export default function RestaurantTableManager() {
                   <div style={{ fontSize: 12, fontWeight: 700, color: t.textMuted, textTransform: 'uppercase', letterSpacing: '0.6px', marginBottom: 14 }}>
                     Agregar productos
                   </div>
-
-                  {/* Category tabs */}
                   <div style={{ display: 'flex', gap: 6, marginBottom: 14, flexWrap: 'wrap' }}>
                     {CATEGORIES.map(cat => (
                       <button key={cat} className="cat-pill" onClick={() => setSelectedCategory(cat)} style={{
                         padding: '5px 14px', borderRadius: 20, fontSize: 11, fontWeight: 700,
                         background: selectedCategory === cat ? `${t.accent}18` : t.surface,
                         border: `1px solid ${selectedCategory === cat ? t.accent : t.border}`,
-                        color: selectedCategory === cat ? t.accent : t.textMuted,
-                        cursor: 'pointer',
+                        color: selectedCategory === cat ? t.accent : t.textMuted, cursor: 'pointer',
                       }}>
                         {cat}
                       </button>
                     ))}
                   </div>
-
-                  {/* Menu grid */}
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
                     {filteredMenu.map(item => (
                       <div key={item.id} className="menu-item" onClick={() => addOrderItem(item)}>
@@ -552,12 +598,10 @@ export default function RestaurantTableManager() {
               }}>
                 <X size={13} />
               </button>
-
               <div style={{ marginBottom: 20 }}>
                 <div style={{ fontSize: 10, color: t.accent, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1px', marginBottom: 5 }}>Nueva mesa</div>
                 <h3 style={{ fontSize: 20, fontWeight: 800, color: t.text }}>Agregar Mesa</h3>
               </div>
-
               <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
                 <div>
                   <Label>Nombre de la mesa</Label>
@@ -575,7 +619,6 @@ export default function RestaurantTableManager() {
                   </select>
                 </div>
               </div>
-
               <div style={{ display: 'flex', gap: 10, marginTop: 22 }}>
                 <button className="btn-g" onClick={() => setShowAddTableModal(false)} style={{
                   flex: 1, padding: '11px', background: t.surface, border: `1px solid ${t.border}`,
